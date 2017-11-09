@@ -1,0 +1,8 @@
+# Ansible host that runs LDAP server
+ldap_host: 'ldap'
+
+# IPA domain to which client will join
+ipa_domain: 'ipa.vm'
+
+# AD domain to which client will join
+ad_domain: 'ad.vm'

@@ -1,0 +1,10 @@
+# Active Directory domain to create as a forest root
+ad_domain: 'ad.vm'
+ad_netbios: 'AD'
+
+# Safe password for the domain controller
+ad_safe_password: 'Secret123'
+
+# Functional levels
+forest_mode: Win2012R2
+domain_mode: Win2012R2

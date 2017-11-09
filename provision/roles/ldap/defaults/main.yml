@@ -1,0 +1,3 @@
+# Authentication information for LDAP server
+bind_dn: 'cn=Directory Manager'
+bind_pw: '123456789'

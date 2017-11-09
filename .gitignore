@@ -1,0 +1,5 @@
+.vagrant/
+shared-data/
+!shared-data/README
+shared-enrollment/
+!shared-enrollment/README

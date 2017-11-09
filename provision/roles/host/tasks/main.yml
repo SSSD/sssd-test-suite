@@ -1,0 +1,39 @@
+- name: Install packages
+  become: True
+  package:
+    name: '{{ item }}'
+    state: present
+  with_items:
+  - python-firewall
+  - python2-winrm
+  - python3-winrm
+  - NetworkManager
+  - dnsmasq
+  - qemu-kvm
+  
+- name: Create /etc/polkit-1/rules.d/00-org.libvirt.unix.manager.rules
+  become: True
+  template:
+    src: polkit
+    dest: /etc/polkit-1/rules.d/00-org.libvirt.unix.manager.rules
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Allow services needed for NFS in firewall
+  become: True
+  firewalld:
+    service: '{{ item }}'
+    permanent: true
+    state: enabled
+  with_items:
+  - nfs
+  - rpc-bind
+  - mountd
+  
+- name: Restart firewalld
+  become: True
+  service:
+    name: firewalld.service
+    enabled: yes
+    state: restarted

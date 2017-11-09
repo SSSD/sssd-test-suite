@@ -1,0 +1,168 @@
+- name: Install SSSD build and run-time dependencies
+  become: True
+  package:
+    name: '{{ item }}'
+    state: present
+  when: skip_packages is not defined or not skip_packages
+  with_items:
+  - adcli
+  - augeas-devel
+  - autoconf
+  - automake
+  - bind-utils
+  - c-ares-devel
+  - check
+  - check-devel
+  - cifs-utils-devel
+  - dbus-devel
+  - dbus-libs
+  - diffstat
+  - docbook-style-xsl
+  - doxygen
+  - freeipa-client
+  - gettext
+  - gettext-devel
+  - glib2-devel
+  - http-parser-devel
+  - jansson-devel
+  - keyutils-libs-devel
+  - krb5-devel
+  - libcmocka
+  - libcmocka-devel
+  - libcollection-devel
+  - libcurl-devel
+  - libdhash-devel
+  - libini_config-devel
+  - libldb
+  - libldb-devel
+  - libnfsidmap-devel
+  - libnl3-devel
+  - libpath_utils-devel
+  - libref_array-devel
+  - libselinux-devel
+  - libsemanage-devel
+  - libsmbclient-devel
+  - libtalloc
+  - libtalloc-devel
+  - libtdb
+  - libtdb-devel
+  - libtevent
+  - libtevent-devel
+  - libtool
+  - libuuid-devel
+  - libxml2
+  - libxslt
+  - m4
+  - nspr-devel
+  - nss-devel
+  - nss-util-devel
+  - nss_wrapper
+  - oddjob
+  - oddjob-mkhomedir
+  - openldap-devel
+  - pam-devel
+  - pam_wrapper
+  - pcre-devel
+  - pkgconfig
+  - po4a
+  - popt-devel
+  - python-devel
+  - python3-devel
+  - realmd
+  - resolv_wrapper
+  - samba-common-tools
+  - samba-devel
+  - samba4-devel
+  - selinux-policy-targeted
+  - socket_wrapper
+  - sssd
+  - sssd-*
+  - systemd-devel
+  - systemtap-sdt-devel
+  - uid_wrapper
+  
+- name: Install debug information
+  become: True
+  shell: |
+    dnf debuginfo-install -y        \
+        dbus-devel                  \
+        libcmocka                   \
+        libcollection-devel         \
+        libdhash                    \
+        libini_config               \
+        libldb                      \
+        libtalloc                   \
+        libtevent
+  when: skip_packages is not defined or not skip_packages
+    
+- name: Join IPA domain
+  become: True
+  shell: |
+    /usr/sbin/ipa-client-install --unattended          \
+      --domain {{ ipa_domain | quote }}                \
+      --principal admin                                \
+      --password 123456789                             \
+      --force-ntpd
+  register: result
+  args:
+    creates: /etc/ipa/ca.crt
+
+- name: Copy IPA keytab to shared folder
+  become: True
+  copy:
+    src: /etc/krb5.keytab
+    dest: '/shared/enrollment/{{ inventory_hostname }}/ipa.keytab'
+    remote_src: yes
+  when: result.changed  
+    
+- name: Remove /etc/krb5.keytab
+  become: True
+  file:
+    path: /etc/krb5.keytab
+    state: absent
+    
+- name: Join to Active Directory domain
+  become: True
+  shell: |
+    realm list | grep {{ ad_domain | quote }}
+    if [ $? -eq 0 ]; then
+      echo "Client is already enrolled in {{ ad_domain | quote }}. Nothing to do."
+      exit 255
+    fi
+  
+    echo vagrant | realm join {{ ad_domain | quote }}
+  register: result
+  failed_when: "result.rc != 255 and result.rc != 0"
+  changed_when: "result.rc == 0"
+  
+- name: Copy Active Directory keytab to shared folder
+  become: True
+  copy:
+    src: /etc/krb5.keytab
+    dest: '/shared/enrollment/{{ inventory_hostname }}/ad.keytab'
+    remote_src: yes
+  when: result.changed
+    
+- name: Remove /etc/krb5.keytab
+  become: True
+  file:
+    path: /etc/krb5.keytab
+    state: absent
+
+- name: Create /etc/sssd/sssd.conf
+  become: True
+  template:
+    src: sssd.conf
+    dest: /etc/sssd/sssd.conf
+    owner: root
+    group: root
+    mode: 0600
+    
+- name: Create /etc/sudo.conf
+  become: True
+  template:
+    src: sudo.conf
+    dest: /etc/sudo.conf
+    owner: root
+    group: root
+    mode: 0644

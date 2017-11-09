@@ -1,0 +1,3 @@
+This directory is shared with your Linux guest machines and mounted at
+/shared/enrollment. When the guests are provisioned, it contains
+data required for enrollment such as certificates and keytabs.

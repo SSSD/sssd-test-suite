@@ -1,0 +1,8 @@
+---
+- hosts: ipa:ldap:client
+  roles:
+  - ping
+
+- hosts: ad:ad-child
+  roles:
+  - win-ping

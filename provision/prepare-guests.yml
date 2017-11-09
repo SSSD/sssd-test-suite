@@ -1,0 +1,35 @@
+---
+- hosts: ipa:ldap:client
+  roles:
+  - common
+
+- hosts: ad:ad-child
+  roles:
+  - win-common
+  - win-dnsclient
+
+- hosts: ad
+  roles:
+  - win-forest
+  - win-reboot
+
+- hosts: ipa
+  roles:
+  - ipa
+  
+- hosts: ad-child
+  roles:
+  - win-domain
+  - win-reboot
+
+- hosts: ipa:ldap:client
+  roles:
+  - dnsclient
+
+- hosts: ldap
+  roles:
+  - ldap
+  
+- hosts: client
+  roles:
+  - sssd

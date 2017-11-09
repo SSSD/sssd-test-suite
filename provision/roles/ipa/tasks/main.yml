@@ -1,0 +1,159 @@
+- name: Install FreeIPA packages
+  become: True
+  package:
+    name: '{{ item }}'
+    state: present
+  when: skip_packages is not defined or not skip_packages
+  with_items:
+  - freeipa-server
+  - freeipa-server-dns
+  - freeipa-server-trust-ad
+
+- name: Remove hostname from /etc/hosts
+  become: True
+  lineinfile:
+    path: /etc/hosts
+    regexp: '^.*{{ ipa_hostname | regex_escape() }}.*$'
+    state: absent
+
+- name: Install IPA server
+  become: True
+  shell: |
+    /usr/sbin/ipa-server-install --unattended          \
+      --realm={{ ipa_realm | quote }}                  \
+      --domain={{ ipa_domain | quote }}                \
+      --ds-password={{ ipa_password | quote }}         \
+      --admin-password={{ ipa_password | quote }}      \
+      --hostname={{ ipa_hostname | quote }}            \
+      --setup-dns                                      \
+      --auto-forwarders                                \
+      --auto-reverse                                   \
+      --no-dnssec-validation                           \
+      --no-host-dns
+      
+    /usr/sbin/ipa-adtrust-install --unattended         \
+      --netbios-name={{ ipa_netbios | quote }}         \
+      --admin-password={{ ipa_password | quote }} 
+  args:
+    creates: /etc/ipa/default.conf
+
+- name: Add DNS zones
+  shell: |
+    echo {{ ipa_password | quote }} | kinit admin
+     
+    ipa dnszone-show {{ item | quote }}
+    if [ $? -eq 0 ]; then
+      echo "Zone {{ item | quote }} already exists. Nothing to do."
+      exit 255
+    fi
+     
+    ipa dnszone-add {{ item | quote }}
+  register: result
+  failed_when: "result.rc != 255 and result.rc != 0"
+  changed_when: "result.rc == 0"
+  with_items:
+  - '{{ ldap_domain }}'
+  - '{{ ldap_revzone }}'
+  - '{{ client_domain }}'
+  - '{{ client_revzone }}'
+  - '{{ ad_revzone }}'
+  - '{{ ad_child_revzone }}'
+  
+- name: Add DNS zone forwarders for AD machines
+  shell: |
+    echo {{ ipa_password | quote }} | kinit admin
+     
+    ipa dnsforwardzone-show {{ item.zone | quote }}
+    if [ $? -eq 0 ]; then
+      echo "Zone forwarder for {{ item.zone | quote }} already exists. Nothing to do."
+      exit 255
+    fi
+    
+    ipa dnsforwardzone-add {{ item.zone | quote }}. --forwarder={{ item.forwarder | quote }} --forward-policy=only
+  register: result
+  failed_when: "result.rc != 255 and result.rc != 0"
+  changed_when: "result.rc == 0"
+  with_items:
+  - { zone: '{{ ad_domain }}', forwarder: '{{ ad_ip }}'}
+  - { zone: '{{ ad_child_domain }}', forwarder: '{{ ad_child_ip }}'}
+
+- name: Add DNS A records
+  shell: |
+    echo {{ ipa_password | quote }} | kinit admin
+     
+    ipa dnsrecord-show {{ item.zone | quote }} {{ item.name | quote }}
+    if [ $? -eq 0 ]; then
+      echo "Record {{ item.name | quote }}.{{ item.zone | quote }} already exists. Nothing to do."
+      exit 255
+    fi
+     
+    ipa dnsrecord-add {{ item.zone | quote }} {{ item.name | quote }} \
+      --a-ip-address {{ item.ip | quote }}
+  register: result
+  failed_when: "result.rc != 255 and result.rc != 0"
+  changed_when: "result.rc == 0"
+  with_items:
+  - { zone: '{{ ldap_domain }}', name: 'master', ip: '{{ ldap_ip }}'}
+  - { zone: '{{ client_domain }}', name: 'master', ip: '{{ client_ip }}'}
+
+- name: Add DNS SRV records
+  shell: |
+    echo {{ ipa_password | quote }} | kinit admin
+     
+    ipa dnsrecord-show {{ item.zone | quote }} {{ item.name | quote }}
+    if [ $? -eq 0 ]; then
+      echo "Record {{ item.name | quote }}.{{ item.zone | quote }} already exists. Nothing to do."
+      exit 255
+    fi
+     
+    ipa dnsrecord-add {{ item.zone | quote }} {{ item.name }}     \
+      --srv-target={{ item.target | quote }}.                     \
+      --srv-priority=0 --srv-weight=100 --srv-port=389
+  register: result
+  failed_when: "result.rc != 255 and result.rc != 0"
+  changed_when: "result.rc == 0"
+  with_items:
+  - { zone: '{{ ldap_domain }}', name: '_ldap._tcp', target: 'master.{{ ldap_domain }}'}
+
+- name: Add DNS PTR records
+  shell: |
+    echo {{ ipa_password | quote }} | kinit admin
+     
+    ipa dnsrecord-show {{ item.zone | quote }} {{ item.name | quote }}
+    if [ $? -eq 0 ]; then
+      echo "Record {{ item.name | quote }}.{{ item.zone | quote }} already exists. Nothing to do."
+      exit 255
+    fi
+     
+    ipa dnsrecord-add {{ item.zone | quote }} {{ item.name | quote }} \
+      --ptr-hostname={{ item.target | quote }}
+  register: result
+  failed_when: "result.rc != 255 and result.rc != 0"
+  changed_when: "result.rc == 0"
+  with_items:
+  - { zone: '{{ ldap_revzone }}', name: '{{ ldap_ptrname }}', target: 'master.{{ ldap_domain }}.'}
+  - { zone: '{{ client_revzone }}', name: '{{ client_ptrname }}', target: 'master.{{ client_domain }}.'}
+  - { zone: '{{ ad_revzone }}', name: '{{ ad_ptrname }}', target: 'root.{{ ad_domain }}.'}
+  - { zone: '{{ ad_child_revzone }}', name: '{{ ad_child_ptrname }}', target: 'child.{{ ad_child_domain }}.'}
+  
+- name: 'Setup trust with {{ ad_domain }}'
+  shell: |
+    echo {{ ipa_password | quote }} | kinit admin
+     
+    ipa trust-show {{ ad_domain | quote }}
+    if [ $? -eq 0 ]; then
+      echo "Trust {{ ad_domain | quote }} already exists. Nothing to do."
+      exit 255
+    fi
+     
+    echo vagrant | ipa trust-add {{ ad_domain | quote }} --admin Administrator --password
+  register: result
+  failed_when: "result.rc != 255 and result.rc != 0"
+  changed_when: "result.rc == 0"
+
+- name: Copy certificate to shared folder
+  become: True
+  copy:
+    src: /etc/ipa/ca.crt
+    dest: '/shared/enrollment/{{ inventory_hostname }}/'
+    remote_src: yes

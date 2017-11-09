@@ -1,0 +1,2 @@
+server=/vm/{{ vm_dns_server }}
+server=/{{ revzone }}/{{ vm_dns_server }}

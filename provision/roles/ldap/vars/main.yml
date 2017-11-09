@@ -1,0 +1,5 @@
+# Parameters for ldapmodify
+ldap_auth:
+  server_uri: ldap://localhost/
+  bind_dn: '{{ bind_dn }}'
+  bind_pw: '{{ bind_pw }}'

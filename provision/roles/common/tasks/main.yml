@@ -1,0 +1,80 @@
+- name: Upgrade all packages
+  become: True
+  package:
+    name: '*'
+    state: latest
+  when: skip_packages is not defined or not skip_packages
+
+- name: Install common packages
+  become: True
+  package:
+    name: '{{ item }}'
+    state: present
+  when: skip_packages is not defined or not skip_packages
+  with_items:
+  - python
+  - python-dnf
+  - python-ldap
+  - libselinux-python
+  - bash-completion
+  - openldap-clients
+  - NetworkManager
+  - dnsmasq
+  - vim
+  - wget
+  - git
+  - tig
+  - gdb
+  - ldb-tools
+
+- name: Run SELinux in permissive mode
+  become: True
+  selinux:
+    policy: targeted
+    state: permissive
+
+- name: 'Create /shared/enrollment/{{ inventory_hostname }} directory'
+  become: True
+  file:
+    path: '/shared/enrollment/{{ inventory_hostname }}/'
+    state: directory
+
+- name: Add .bashrc for user
+  become: True
+  template:
+    src: bashrc
+    dest: /home/vagrant/.bashrc
+    owner: vagrant
+    group: vagrant
+    mode: 0644
+    force: yes
+
+- name: Add .vimrc for user
+  become: True
+  template:
+    src: vimrc
+    dest: /home/vagrant/.vimrc
+    owner: vagrant
+    group: vagrant
+    mode: 0644
+    force: yes
+
+- name: Add .bashrc for root
+  become: True
+  template:
+    src: bashrc
+    dest: /root/.bashrc
+    owner: root
+    group: root
+    mode: 0644
+    force: yes
+
+- name: Add .vimrc for root
+  become: True
+  template:
+    src: vimrc
+    dest: /root/.vimrc
+    owner: root
+    group: root
+    mode: 0644
+    force: yes

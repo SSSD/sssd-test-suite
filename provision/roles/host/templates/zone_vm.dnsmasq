@@ -1,0 +1,1 @@
+server=/vm/{{ vm_dns_server }}

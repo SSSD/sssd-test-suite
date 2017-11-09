@@ -1,0 +1,5 @@
+- name: Setup DNS
+  win_dns_client:
+    adapter_names: "*"
+    ipv4_addresses:
+    - '{{ dns_server }}'

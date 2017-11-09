@@ -1,0 +1,2 @@
+# Derived DNS reverse zone for network
+revzone: "{{ vm_network | regex_replace('^(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)$', '\\3.\\2.\\1.in-addr.arpa') }}"

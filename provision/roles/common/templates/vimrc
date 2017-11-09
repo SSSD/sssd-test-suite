@@ -1,0 +1,7 @@
+set expandtab
+set tabstop=4
+set shiftwidth=4
+set number
+set nowrap
+
+command RemoveSSSDLog execute "%s/(\\u\\w\\w \\u\\w\\w \\(\\d\\| \\)\\d \\d\\d:\\d\\d:\\d\\d \\d\\d\\d\\d) //g"
