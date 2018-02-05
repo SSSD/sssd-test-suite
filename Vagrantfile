@@ -1,6 +1,5 @@
-BOX_LINUX    = "fedora/26-cloud-base"
-BOX_AD_ROOT  = "peru/windows-server-2016-standard-x64-eval"
-BOX_AD_CHILD = "peru/windows-server-2012-r2-standard-x64-eval"
+BOX_LINUX = "fedora/27-cloud-base"
+BOX_AD    = "peru/windows-server-2016-standard-x64-eval"
 
 def Guest(guest, box, hostname, ip, memory)
   guest.vm.box = box
@@ -82,9 +81,9 @@ end
 # Currently each windows machine must be created with different box
 # so it has different SID. Otherwise we fail to create a domain controller.
 Vagrant.configure("2") do |config|
-  LinuxGuest(  "#{BOX_LINUX}",    config, "ipa",      "master.ipa.vm",    "192.168.100.10",  1792)
-  LinuxGuest(  "#{BOX_LINUX}",    config, "ldap",     "master.ldap.vm",   "192.168.100.20",  512)
-  LinuxGuest(  "#{BOX_LINUX}",    config, "client",   "master.client.vm", "192.168.100.30",  1024)
-  WindowsGuest("#{BOX_AD_ROOT}",  config, "ad",       "root",             "192.168.100.110", 1024)
-  WindowsGuest("#{BOX_AD_CHILD}", config, "ad-child", "child",            "192.168.100.120", 1024)
+  LinuxGuest(  "#{BOX_LINUX}", config, "ipa",      "master.ipa.vm",    "192.168.100.10",  1792)
+  LinuxGuest(  "#{BOX_LINUX}", config, "ldap",     "master.ldap.vm",   "192.168.100.20",  512)
+  LinuxGuest(  "#{BOX_LINUX}", config, "client",   "master.client.vm", "192.168.100.30",  1024)
+  WindowsGuest("#{BOX_AD}",    config, "ad",       "root",             "192.168.100.110", 1024)
+  WindowsGuest("#{BOX_AD}",    config, "ad-child", "child",            "192.168.100.120", 1024)
 end
