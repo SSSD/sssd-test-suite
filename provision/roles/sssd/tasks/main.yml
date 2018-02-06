@@ -166,3 +166,10 @@
     owner: root
     group: root
     mode: 0644
+    
+- name: Restart SSSD
+  become: True
+  service:
+    name: sssd.service
+    enabled: yes
+    state: restarted
