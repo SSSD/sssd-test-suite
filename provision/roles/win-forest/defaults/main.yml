@@ -6,5 +6,5 @@ ad_netbios: 'AD'
 ad_safe_password: 'Secret123'
 
 # Functional levels
-forest_mode: Win2012R2
-domain_mode: Win2012R2
+forest_mode: WinThreshold
+domain_mode: WinThreshold
