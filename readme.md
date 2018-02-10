@@ -98,6 +98,13 @@ package tool on other Linux distributions.
 $ vagrant plugin install vagrant-libvirt
 ```
 
+5. Install winrm plugin for Vagrant
+```bash
+$ vagrant plugin install winrm
+$ vagrant plugin install winrm-fs
+$ vagrant plugin install winrm-elevated
+```
+
 ### Preparing machines
 
 Since Vagrant ansible plugin is not yet well suited for a multi-machine
