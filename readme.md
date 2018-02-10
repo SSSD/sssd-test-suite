@@ -71,7 +71,7 @@ package tool on other Linux distributions.
 ```bash
 # dnf install -y       \
     ansible            \
-    python-selinux     \
+    libselinux-python  \
     python-dnf         \
     python2-winrm      \
     python3-winrm
@@ -90,7 +90,7 @@ package tool on other Linux distributions.
     libvirt-daemon-kvm     \
     libvirt-devel          \
     ruby-devel             \
-    rubygem-ruby-lib
+    rubygem-ruby-libvirt
 ```
 
 4. Install libvirt plugin for Vagrant
