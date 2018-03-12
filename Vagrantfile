@@ -35,6 +35,10 @@ def LinuxGuest(box, config, name, hostname, ip, memory)
     sync.each do |host, guest|
       this.vm.synced_folder "#{host}", "#{guest}", nfs_udp: false
     end
+    
+    if ENV.has_key?('SSSD_TEST_SUITE_BASHRC')
+      this.ssh.forward_env = ["SSSD_TEST_SUITE_BASHRC"]
+    end
 
     this.vm.provision :shell do |shell|
       shell.path = "./provision/install-packages.sh"

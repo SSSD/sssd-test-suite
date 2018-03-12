@@ -78,3 +78,24 @@
     group: root
     mode: 0644
     force: yes
+
+- name: Keep SSSD_TEST_SUITE_BASHRC variable when sudo
+  become: True
+  lineinfile:
+    path: /etc/sudoers
+    insertafter: '^Defaults[ \t]+env_keep[ \t]+(.*)$'
+    line: 'Defaults    env_keep += "SSSD_TEST_SUITE_BASHRC"'
+
+- name: Accept SSSD_TEST_SUITE_BASHRC variable through ssh
+  become: True
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    insertafter: '^AcceptEnv (.*)$'
+    line: 'AcceptEnv SSSD_TEST_SUITE_BASHRC'
+
+- name: Reload sshd
+  become: True
+  service:
+    name: sshd.service
+    enabled: yes
+    state: reloaded
