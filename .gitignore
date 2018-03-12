@@ -1,3 +1,4 @@
+.project
 .vagrant/
 shared-data/
 !shared-data/README
