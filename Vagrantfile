@@ -18,16 +18,22 @@ def LinuxGuest(box, config, name, hostname, ip, memory)
     Guest(this, box, hostname, ip, memory)
     
     this.vm.synced_folder ".", "/vagrant", disabled: true
-
-    this.vm.synced_folder "./shared-data",       "/shared/data"
-    this.vm.synced_folder "./shared-enrollment", "/shared/enrollment"
     
-    if ENV.has_key?('SSSD_SOURCE')
-      this.vm.synced_folder ENV['SSSD_SOURCE'],    "/shared/sssd"
+    sync = {
+      "./shared-data" => "/shared/data",
+      "./shared-enrollment" => "/shared/enrollment"
+    }
+    
+    # "hostpath:guestpath hostpath:guestpath ..."
+    if ENV.has_key?('SSSD_TEST_SUITE_MOUNT')
+      ENV['SSSD_TEST_SUITE_MOUNT'].split(" ").each do |mount|
+         host, guest = mount.split(":")
+         sync[host] = guest
+      end
     end
     
-    if ENV.has_key?('INCLUDE_DIR')
-      this.vm.synced_folder ENV['INCLUDE_DIR'],    "/shared/scripts"
+    sync.each do |host, guest|
+      this.vm.synced_folder "#{host}", "#{guest}", nfs_udp: false
     end
 
     this.vm.provision :shell do |shell|
