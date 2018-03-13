@@ -30,21 +30,29 @@ machine enrolled to those servers, ready to build and debug your code.
   boxes use fixed machine SID and Active Directory requires different SID
   for each domain controller.
 
-* There are several shared folders between Linux guests and host machine:
+* There are two shared folders between Linux guests and host machine:
   * `./shared-enrollment => /shared/enrollment/` -- enrollment data such
     as certificates and keytabs are stored in this directory.
   * `./shared-data => /shared/data/` -- custom data to share.
-  * If `SSSD_SOURCE` environment variable is defined it will mount this
-    directory at `/shared/sssd`
-  * If `INCLUDE_DIR` environment variable is defined it will mount this
-    directory at `/shared/scripts` and all scripts in this directory
-    are automatically sourced by `.bashrc`. You can use it for example
-    to source
-    [SSSD Development Scripts](https://github.com/pbrezina/sssd-dev-utils).
-    
-* If you choose to use `INCLUDE_DIR` to source your scripts, you can expect
-  that `VAGRANT=yes` is defined when a script is executed in the virtual
-  environment.
+  
+* Additionally, you can mount more folders by defining
+  `SSSD_TEST_SUITE_MOUNT` environment variable with the following format:
+  `host_path:guest_path host_path:guest_path ...`. For example:
+
+```
+export SSSD_TEST_SUITE_MOUNT=""
+
+SSSD_TEST_SUITE_MOUNT+=" $MY_WORKSPACE:/shared/workspace"
+SSSD_TEST_SUITE_MOUNT+=" $MY_USER_HOME/packages:/shared/packages"
+``` 
+
+* You can also define `SSSD_TEST_SUITE_BASHRC`. If this variable is set
+  the file that it points to is automatically sourced from guest `.bashrc`.
+  For example:
+
+```
+export SSSD_TEST_SUITE_BASHRC="/shared/workspace/my-scripts/vagrant-bashrc.sh"
+```
   
 ### User Accounts
 
