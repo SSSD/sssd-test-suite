@@ -103,51 +103,62 @@
       --principal admin                                \
       --password 123456789                             \
       --force-ntpd
-  register: result
+  register: installed
   args:
     creates: /etc/ipa/ca.crt
+
+- name: Copy IPA keytab to local folder
+  become: True
+  copy:
+    src: /etc/krb5.keytab
+    dest: '/etc/sssd/ipa.keytab'
+    remote_src: yes
+  when: installed.changed
+  
+- name: Remove /etc/krb5.keytab
+  become: True
+  file:
+    path: /etc/krb5.keytab
+    state: absent
 
 - name: Copy IPA keytab to shared folder
   become: True
   copy:
-    src: /etc/krb5.keytab
+    force: True
+    src: /etc/sssd/ipa.keytab
     dest: '/shared/enrollment/{{ inventory_hostname }}/ipa.keytab'
     remote_src: yes
-  when: result.changed  
-    
-- name: Remove /etc/krb5.keytab
-  become: True
-  file:
-    path: /etc/krb5.keytab
-    state: absent
     
 - name: Join to Active Directory domain
   become: True
   shell: |
-    realm list | grep {{ ad_domain | quote }}
-    if [ $? -eq 0 ]; then
-      echo "Client is already enrolled in {{ ad_domain | quote }}. Nothing to do."
-      exit 255
-    fi
-  
     echo vagrant | realm join {{ ad_domain | quote }}
-  register: result
-  failed_when: "result.rc != 255 and result.rc != 0"
-  changed_when: "result.rc == 0"
-  
-- name: Copy Active Directory keytab to shared folder
+    touch /etc/sssd/ad_enrolled
+  register: installed
+  args:
+    creates: /etc/sssd/ad_enrolled
+
+- name: Copy AD keytab to local folder
   become: True
   copy:
     src: /etc/krb5.keytab
-    dest: '/shared/enrollment/{{ inventory_hostname }}/ad.keytab'
+    dest: '/etc/sssd/ad.keytab'
     remote_src: yes
-  when: result.changed
-    
+  when: installed.changed
+  
 - name: Remove /etc/krb5.keytab
   become: True
   file:
     path: /etc/krb5.keytab
     state: absent
+
+- name: Copy AD keytab to shared folder
+  become: True
+  copy:
+    force: True
+    src: /etc/sssd/ad.keytab
+    dest: '/shared/enrollment/{{ inventory_hostname }}/ad.keytab'
+    remote_src: yes
 
 - name: Create /etc/sssd/sssd.conf
   become: True
@@ -157,6 +168,7 @@
     owner: root
     group: root
     mode: 0600
+  register: installed
     
 - name: Create /etc/sudo.conf
   become: True
@@ -173,3 +185,4 @@
     name: sssd.service
     enabled: yes
     state: restarted
+  when: installed.changed

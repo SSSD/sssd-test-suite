@@ -36,4 +36,4 @@
   service:
     name: firewalld.service
     enabled: yes
-    state: restarted
+    state: reloaded

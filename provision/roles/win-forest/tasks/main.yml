@@ -13,5 +13,10 @@
       -NoRebootOnCompletion:$true                                             \
       -SafeModeAdministratorPassword                                          \
         (ConvertTo-SecureString '{{ ad_safe_password }}' -AsPlainText -Force)
+  register: installation
   args:
     creates: 'C:\Windows\NTDS'
+
+- name: Reboot machine
+  win_reboot:
+  when: installation.changed

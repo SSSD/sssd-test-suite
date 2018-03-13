@@ -92,6 +92,7 @@
     path: /etc/ssh/sshd_config
     insertafter: '^AcceptEnv (.*)$'
     line: 'AcceptEnv SSSD_TEST_SUITE_BASHRC'
+  register: result
 
 - name: Reload sshd
   become: True
@@ -99,3 +100,4 @@
     name: sshd.service
     enabled: yes
     state: reloaded
+  when: result.changed

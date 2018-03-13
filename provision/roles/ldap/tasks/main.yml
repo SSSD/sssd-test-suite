@@ -24,6 +24,7 @@
       slapd.RootDNPwd={{ bind_pw | quote }}
 
     echo {{ bind_pw | quote }} | /tmp/setupssl2.sh /etc/dirsrv/slapd-master-ldap
+  register: installed
   args:
     creates: /etc/dirsrv/slapd-master-ldap
 
@@ -40,6 +41,7 @@
     name: dirsrv.target
     enabled: yes
     state: restarted
+  when: installed.changed
 
 - name: Restart directory server instance
   become: True
@@ -47,6 +49,7 @@
     name: dirsrv@master-ldap.service
     enabled: yes
     state: restarted
+  when: installed.changed
 
 - name: Remove default organizational units
   ldap_entry:

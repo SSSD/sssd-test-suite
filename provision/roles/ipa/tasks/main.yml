@@ -13,7 +13,7 @@
   become: True
   lineinfile:
     path: /etc/hosts
-    regexp: '^.*{{ ipa_hostname | regex_escape() }}.*$'
+    regexp: '^(127\.0\.0\.1|::1)[ \t]+master.ipa.vm.*$'
     state: absent
 
 - name: Install IPA server
@@ -33,9 +33,18 @@
       
     /usr/sbin/ipa-adtrust-install --unattended         \
       --netbios-name={{ ipa_netbios | quote }}         \
-      --admin-password={{ ipa_password | quote }} 
+      --admin-password={{ ipa_password | quote }}
+  register: installed 
   args:
     creates: /etc/ipa/default.conf
+
+- name: Copy certificate to shared folder
+  become: True
+  copy:
+    force: True
+    src: /etc/ipa/ca.crt
+    dest: '/shared/enrollment/{{ inventory_hostname }}/'
+    remote_src: yes
 
 - name: Add DNS zones
   shell: |
@@ -150,10 +159,3 @@
   register: result
   failed_when: "result.rc != 255 and result.rc != 0"
   changed_when: "result.rc == 0"
-
-- name: Copy certificate to shared folder
-  become: True
-  copy:
-    src: /etc/ipa/ca.crt
-    dest: '/shared/enrollment/{{ inventory_hostname }}/'
-    remote_src: yes

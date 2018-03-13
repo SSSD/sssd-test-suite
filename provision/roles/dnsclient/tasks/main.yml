@@ -15,14 +15,12 @@
     owner: root
     group: root
     mode: 0644
+  register: result
 
-- name: Restart NetworkManager
+- name: Reload NetworkManager
   become: True
   service:
     name: NetworkManager.service
     enabled: yes
-    state: restarted
-    
-- name: Wait until network connection is ready
-  pause:
-    seconds: 10
+    state: reloaded
+  when: result.changed
