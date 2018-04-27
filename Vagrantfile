@@ -33,7 +33,7 @@ def LinuxGuest(box, config, name, hostname, ip, memory)
     end
     
     sync.each do |host, guest|
-      this.vm.synced_folder "#{host}", "#{guest}", nfs_udp: false
+      this.vm.synced_folder "#{host}", "#{guest}", type: "nfs", nfs_udp: false
     end
     
     if ENV.has_key?('SSSD_TEST_SUITE_BASHRC')
