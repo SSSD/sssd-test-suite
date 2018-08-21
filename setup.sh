@@ -33,7 +33,15 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-echo "3. Provisioning guests..."
+echo "3. Remove old enrollment data"
+rm -fr ./shared-enrollment/ad ./shared-enrollment/ldap ./shared-enrollment/ipa
+
+if [ $? -ne 0 ]; then
+    echo "Unable to remove old enrollment data!"
+    exit 1
+fi
+
+echo "4. Provisioning guests..."
 ./provision.sh
 
 if [ $? -ne 0 ]; then
