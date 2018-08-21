@@ -4,12 +4,12 @@
     name: '{{ item }}'
     state: present
   with_items:
-  - python-firewall
   - python2-winrm
   - python3-winrm
   - NetworkManager
   - dnsmasq
   - qemu-kvm
+  - firewalld
   
 - name: Create /etc/polkit-1/rules.d/00-org.libvirt.unix.manager.rules
   become: True
@@ -22,18 +22,26 @@
 
 - name: Allow services needed for NFS in firewall
   become: True
-  firewalld:
-    service: '{{ item }}'
-    permanent: true
-    state: enabled
+  shell: |
+    firewall-cmd --list-services | grep {{ item | quote }}
+    if [ $? -eq 0 ]; then
+      echo "Service {{ item | quote }} is already enabled. Nothing to do."
+      exit 255
+    fi
+     
+    firewall-cmd --permanent --add-service={{ item | quote }}
+  register: fw_result
+  failed_when: "fw_result.rc != 255 and fw_result.rc != 0"
+  changed_when: "fw_result.rc == 0"
   with_items:
   - nfs
-  - rpc-bind
   - mountd
-  
+  - rpc-bind
+
 - name: Restart firewalld
   become: True
   service:
     name: firewalld.service
     enabled: yes
     state: reloaded
+  when: fw_result.changed
