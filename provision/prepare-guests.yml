@@ -9,34 +9,50 @@
   roles:
   - packages
   - common
+  vars_files:
+  - variables.yml
 
 - hosts: ad:ad-child
   roles:
   - win-common
   - win-dnsclient
+  vars_files:
+  - variables.yml
 
 - hosts: ad
   roles:
   - win-forest
   - win-dnsclient
+  vars_files:
+  - variables.yml
 
 - hosts: ipa
   roles:
   - ipa
+  vars_files:
+  - variables.yml
   
 - hosts: ad-child
   roles:
   - win-domain
   - win-dnsclient
+  vars_files:
+  - variables.yml
 
 - hosts: ipa:ldap:client
   roles:
   - dnsclient
+  vars_files:
+  - variables.yml
 
 - hosts: ldap
   roles:
   - ldap
+  vars_files:
+  - variables.yml
   
 - hosts: client
   roles:
   - sssd
+  vars_files:
+  - variables.yml

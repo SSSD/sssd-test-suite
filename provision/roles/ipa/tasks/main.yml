@@ -2,18 +2,18 @@
   become: True
   lineinfile:
     path: /etc/hosts
-    regexp: '^(127\.0\.0\.1|::1)[ \t]+master.ipa.vm.*$'
+    regexp: '^(127\.0\.0\.1|::1)[ \t]+{{ ipa.hostname }}.*$'
     state: absent
 
 - name: Install IPA server
   become: True
   shell: |
     /usr/sbin/ipa-server-install --unattended          \
-      --realm={{ ipa_realm | quote }}                  \
-      --domain={{ ipa_domain | quote }}                \
-      --ds-password={{ ipa_password | quote }}         \
-      --admin-password={{ ipa_password | quote }}      \
-      --hostname={{ ipa_hostname | quote }}            \
+      --realm={{ ipa.domain | upper | quote }}         \
+      --domain={{ ipa.domain | quote }}                \
+      --ds-password={{ ipa.password | quote }}         \
+      --admin-password={{ ipa.password | quote }}      \
+      --hostname={{ ipa.fqn | quote }}                 \
       --setup-dns                                      \
       --auto-forwarders                                \
       --auto-reverse                                   \
@@ -21,8 +21,8 @@
       --no-host-dns
       
     /usr/sbin/ipa-adtrust-install --unattended         \
-      --netbios-name={{ ipa_netbios | quote }}         \
-      --admin-password={{ ipa_password | quote }}
+      --netbios-name={{ ipa.netbios | quote }}         \
+      --admin-password={{ ipa.password | quote }}
   register: installed 
   args:
     creates: /etc/ipa/default.conf
@@ -55,7 +55,7 @@
 
 - name: Add DNS zones
   shell: |
-    echo {{ ipa_password | quote }} | kinit admin
+    echo {{ ipa.password | quote }} | kinit admin
      
     ipa dnszone-show {{ item | quote }}
     if [ $? -eq 0 ]; then
@@ -68,16 +68,13 @@
   failed_when: "result.rc != 255 and result.rc != 0"
   changed_when: "result.rc == 0"
   with_items:
-  - '{{ ldap_domain }}'
-  - '{{ ldap_revzone }}'
-  - '{{ client_domain }}'
-  - '{{ client_revzone }}'
-  - '{{ ad_revzone }}'
-  - '{{ ad_child_revzone }}'
+  - '{{ ldap.domain }}'
+  - '{{ client.domain }}'
+  - '{{ network.reverse_zone }}'
   
 - name: Add DNS zone forwarders for AD machines
   shell: |
-    echo {{ ipa_password | quote }} | kinit admin
+    echo {{ ipa.password | quote }} | kinit admin
      
     ipa dnsforwardzone-show {{ item.zone | quote }}
     if [ $? -eq 0 ]; then
@@ -90,12 +87,12 @@
   failed_when: "result.rc != 255 and result.rc != 0"
   changed_when: "result.rc == 0"
   with_items:
-  - { zone: '{{ ad_domain }}', forwarder: '{{ ad_ip }}'}
-  - { zone: '{{ ad_child_domain }}', forwarder: '{{ ad_child_ip }}'}
+  - { zone: '{{ ad.domain }}', forwarder: '{{ ad.ip }}'}
+  - { zone: '{{ ad_child.domain }}', forwarder: '{{ ad_child.ip }}'}
 
 - name: Add DNS A records
   shell: |
-    echo {{ ipa_password | quote }} | kinit admin
+    echo {{ ipa.password | quote }} | kinit admin
      
     ipa dnsrecord-show {{ item.zone | quote }} {{ item.name | quote }}
     if [ $? -eq 0 ]; then
@@ -109,12 +106,12 @@
   failed_when: "result.rc != 255 and result.rc != 0"
   changed_when: "result.rc == 0"
   with_items:
-  - { zone: '{{ ldap_domain }}', name: 'master', ip: '{{ ldap_ip }}'}
-  - { zone: '{{ client_domain }}', name: 'master', ip: '{{ client_ip }}'}
+  - { zone: '{{ ldap.domain }}', name: '{{ ldap.hostname }}', ip: '{{ ldap.ip }}'}
+  - { zone: '{{ client.domain }}', name: '{{ client.hostname }}', ip: '{{ client.ip }}'}
 
 - name: Add DNS SRV records
   shell: |
-    echo {{ ipa_password | quote }} | kinit admin
+    echo {{ ipa.password | quote }} | kinit admin
      
     ipa dnsrecord-show {{ item.zone | quote }} {{ item.name | quote }}
     if [ $? -eq 0 ]; then
@@ -129,40 +126,41 @@
   failed_when: "result.rc != 255 and result.rc != 0"
   changed_when: "result.rc == 0"
   with_items:
-  - { zone: '{{ ldap_domain }}', name: '_ldap._tcp', target: 'master.{{ ldap_domain }}'}
+  - { zone: '{{ ldap.domain }}', name: '_ldap._tcp', target: '{{ ldap.fqn }}'}
 
 - name: Add DNS PTR records
   shell: |
-    echo {{ ipa_password | quote }} | kinit admin
+    PTR_NAME={{ item.ip | regex_replace('.+\.(\d+)', '\1') | quote }}
+    echo {{ ipa.password | quote }} | kinit admin
      
-    ipa dnsrecord-show {{ item.zone | quote }} {{ item.name | quote }}
+    ipa dnsrecord-show {{ item.zone | quote }} $PTR_NAME
     if [ $? -eq 0 ]; then
-      echo "Record {{ item.name | quote }}.{{ item.zone | quote }} already exists. Nothing to do."
+      echo "Record $PTR_NAME.{{ item.zone | quote }} already exists. Nothing to do."
       exit 255
     fi
      
-    ipa dnsrecord-add {{ item.zone | quote }} {{ item.name | quote }} \
+    ipa dnsrecord-add {{ item.zone | quote }} $PTR_NAME \
       --ptr-hostname={{ item.target | quote }}
   register: result
   failed_when: "result.rc != 255 and result.rc != 0"
   changed_when: "result.rc == 0"
   with_items:
-  - { zone: '{{ ldap_revzone }}', name: '{{ ldap_ptrname }}', target: 'master.{{ ldap_domain }}.'}
-  - { zone: '{{ client_revzone }}', name: '{{ client_ptrname }}', target: 'master.{{ client_domain }}.'}
-  - { zone: '{{ ad_revzone }}', name: '{{ ad_ptrname }}', target: 'root.{{ ad_domain }}.'}
-  - { zone: '{{ ad_child_revzone }}', name: '{{ ad_child_ptrname }}', target: 'child.{{ ad_child_domain }}.'}
+  - { zone: '{{ network.reverse_zone }}', ip: '{{ ldap.ip }}',     target: '{{ ldap.fqn }}.'}
+  - { zone: '{{ network.reverse_zone }}', ip: '{{ client.ip }}',   target: '{{ client.fqn }}.'}
+  - { zone: '{{ network.reverse_zone }}', ip: '{{ ad.ip }}',       target: '{{ ad.fqn }}.'}
+  - { zone: '{{ network.reverse_zone }}', ip: '{{ ad_child.ip }}', target: '{{ ad_child.fqn }}.'}
   
-- name: 'Setup trust with {{ ad_domain }}'
+- name: 'Setup trust with {{ ad.domain }}'
   shell: |
-    echo {{ ipa_password | quote }} | kinit admin
+    echo {{ ipa.password | quote }} | kinit admin
      
-    ipa trust-show {{ ad_domain | quote }}
+    ipa trust-show {{ ad.domain | quote }}
     if [ $? -eq 0 ]; then
-      echo "Trust {{ ad_domain | quote }} already exists. Nothing to do."
+      echo "Trust with {{ ad.domain | quote }} already exists. Nothing to do."
       exit 255
     fi
      
-    echo vagrant | ipa trust-add {{ ad_domain | quote }} --admin Administrator --password
+    echo vagrant | ipa trust-add {{ ad.domain | quote }} --admin Administrator --password
   register: result
   failed_when: "result.rc != 255 and result.rc != 0"
   changed_when: "result.rc == 0"

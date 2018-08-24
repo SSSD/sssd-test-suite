@@ -1,3 +1,0 @@
-# Primary DNS server to use for zone "vm." and "in-addr.arpa"
-vm_dns_server: 192.168.100.10
-vm_network:    192.168.100.0

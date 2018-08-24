@@ -1,2 +1,2 @@
-server=/vm/{{ vm_dns_server }}
-server=/{{ revzone }}/{{ vm_dns_server }}
+server=/{{ network.dns_tld }}/{{ network.dns_server }}
+server=/{{ network.reverse_zone }}/{{ network.dns_server }}

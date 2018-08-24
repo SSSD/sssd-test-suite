@@ -7,16 +7,16 @@
 - name: Create directory server instance
   become: True
   shell: |
-    /usr/sbin/setup-ds.pl --silent           \
-      General.SuiteSpotUserID=nobody         \
-      General.SuiteSpotGroup=nobody          \
-      slapd.ServerIdentifier=master-ldap     \
-      slapd.ServerPort=389                   \
-      slapd.Suffix="dc=ldap,dc=vm"           \
-      slapd.RootDN={{ bind_dn | quote }}     \
-      slapd.RootDNPwd={{ bind_pw | quote }}
+    /usr/sbin/setup-ds.pl --silent                          \
+      General.SuiteSpotUserID=nobody                        \
+      General.SuiteSpotGroup=nobody                         \
+      slapd.ServerIdentifier={{ ldap.hostname }}-ldap       \
+      slapd.ServerPort=389                                  \
+      slapd.Suffix={{ ldap.suffix | quote }}                \
+      slapd.RootDN={{ ldap.bind.dn | quote }}               \
+      slapd.RootDNPwd={{ ldap.bind.password | quote }}
 
-    echo {{ bind_pw | quote }} | /tmp/setupssl2.sh /etc/dirsrv/slapd-master-ldap
+    echo {{ ldap.bind.password | quote }} | /tmp/setupssl2.sh /etc/dirsrv/slapd-master-ldap
   register: installed
   args:
     creates: /etc/dirsrv/slapd-master-ldap

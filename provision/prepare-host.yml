@@ -3,3 +3,5 @@
   roles:
   - dnsclient
   - host
+  vars_files:
+  - variables.yml

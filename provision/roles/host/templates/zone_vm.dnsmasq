@@ -1,1 +1,1 @@
-server=/vm/{{ vm_dns_server }}
+server=/{{ network.dns_tld }}/{{ network.dns_server }}

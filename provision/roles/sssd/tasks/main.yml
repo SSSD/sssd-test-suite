@@ -2,9 +2,9 @@
   become: True
   shell: |
     /usr/sbin/ipa-client-install --unattended          \
-      --domain {{ ipa_domain | quote }}                \
+      --domain {{ ipa.domain | quote }}                \
       --principal admin                                \
-      --password 123456789                             \
+      --password {{ ipa.password | quote }}            \
       --force-ntpd
   register: installed
   args:
@@ -35,7 +35,7 @@
 - name: Join to Active Directory domain
   become: True
   shell: |
-    echo vagrant | realm join {{ ad_domain | quote }}
+    echo vagrant | realm join {{ ad.domain | quote }}
     touch /etc/sssd/ad_enrolled
   register: installed
   args:
