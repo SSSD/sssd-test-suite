@@ -1,0 +1,149 @@
+- name: Install common packages
+  become: True
+  dnf:
+    state: present
+    name:
+    - authselect
+    - bash-completion
+    - dnsmasq
+    - gdb
+    - git
+    - ldb-tools
+    - libselinux-python
+    - NetworkManager
+    - openldap-clients
+    - python
+    - python-dnf
+    - python-ldap
+    - tig
+    - vim
+    - wget
+
+- name: Install IPA specific packages
+  become: True
+  dnf:
+    state: present
+    name:
+    - freeipa-server
+    - freeipa-server-dns
+    - freeipa-server-trust-ad
+  when: inventory_hostname == 'ipa'
+
+- name: Install LDAP specific packages
+  become: True
+  dnf:
+    state: present
+    name:
+    - 389-ds-base
+  when: inventory_hostname == 'ldap'
+
+- name: Install Client specific packages
+  become: True
+  dnf:
+    state: present
+    name:
+    - adcli
+    - autoconf
+    - automake
+    - bind-utils
+    - c-ares-devel
+    - check
+    - check-devel
+    - cifs-utils-devel
+    - dbus-devel
+    - dbus-libs
+    - diffstat
+    - docbook-style-xsl
+    - doxygen
+    - findutils
+    - freeipa-client
+    - gcc
+    - gdm-pam-extensions-devel
+    - gettext
+    - gettext-devel
+    - glib2-devel
+    - gnutls-utils
+    - http-parser-devel
+    - jansson-devel
+    - keyutils-libs-devel
+    - krb5-devel
+    - libcmocka
+    - libcmocka-devel
+    - libcollection-devel
+    - libcurl-devel
+    - libdhash-devel
+    - libini_config-devel
+    - libldb
+    - libldb-devel
+    - libnfsidmap-devel
+    - libnl3-devel
+    - libpath_utils-devel
+    - libref_array-devel
+    - libselinux-devel
+    - libsemanage-devel
+    - libsmbclient-devel
+    - libtalloc
+    - libtalloc-devel
+    - libtdb
+    - libtdb-devel
+    - libtevent
+    - libtevent-devel
+    - libtool
+    - libuuid-devel
+    - libxml2
+    - libxslt
+    - m4
+    - nspr-devel
+    - nss-devel
+    - nss-tools
+    - nss-util-devel
+    - nss_wrapper
+    - oddjob
+    - oddjob-mkhomedir
+    - openldap-devel
+    - openssh
+    - openssl
+    - openssl-devel
+    - p11-kit-devel
+    - pam-devel
+    - pam_wrapper
+    - pcre-devel
+    - pkgconfig
+    - po4a
+    - popt-devel
+    - python2-devel
+    - python3-devel
+    - realmd
+    - resolv_wrapper
+    - samba-common-tools
+    - samba-devel
+    - samba-winbind
+    - samba4-devel
+    - selinux-policy-targeted
+    - socket_wrapper
+    - softhsm >= 2.1.0
+    - sssd
+    - sssd-*
+    - systemd
+    - systemd-devel
+    - systemtap-sdt-devel
+    - uid_wrapper
+  when: inventory_hostname == 'client'
+
+- name: Install debug information for specific packages
+  become: True
+  dnf:
+    state: present
+    enablerepo: '*-debuginfo'
+    name:
+    - authselect-debuginfo
+    - authselect-libs-debuginfo
+    - dbus-debuginfo
+    - ding-libs-debuginfo
+    - libcmocka-debuginfo
+    - libdhash-debuginfo
+    - libini_config-debuginfo
+    - libldb-debuginfo
+    - libtalloc-debuginfo
+    - libtevent-debuginfo
+  when: inventory_hostname == 'client'

@@ -40,11 +40,6 @@ def LinuxGuest(box, config, name, hostname, ip, memory)
       this.ssh.forward_env = ["SSSD_TEST_SUITE_BASHRC"]
     end
 
-    this.vm.provision :shell do |shell|
-      shell.path = "./provision/install-packages.sh"
-      shell.args = name
-    end
-
     SetupAnsibleProvisioning(this)
   end
 end

@@ -1,15 +1,14 @@
 - name: Install packages
   become: True
   package:
-    name: '{{ item }}'
     state: present
-  with_items:
-  - python2-winrm
-  - python3-winrm
-  - NetworkManager
-  - dnsmasq
-  - qemu-kvm
-  - firewalld
+    name:
+    - python2-winrm
+    - python3-winrm
+    - NetworkManager
+    - dnsmasq
+    - qemu-kvm
+    - firewalld
   
 - name: Create /etc/polkit-1/rules.d/00-org.libvirt.unix.manager.rules
   become: True

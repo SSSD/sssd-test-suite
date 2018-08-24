@@ -1,0 +1,8 @@
+- name: Upgrade all packages to their latest version
+  become: True
+  package:
+    name: '*'
+    state: latest
+
+- name: 'Include distribution specific package tasks [{{ ansible_distribution }} {{ ansible_distribution_major_version }}]'
+  include_tasks: '{{ ansible_distribution }}{{ ansible_distribution_major_version }}.yml'

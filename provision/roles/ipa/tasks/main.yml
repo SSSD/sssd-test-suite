@@ -1,14 +1,3 @@
-- name: Install FreeIPA packages
-  become: True
-  package:
-    name: '{{ item }}'
-    state: present
-  when: skip_packages is not defined or not skip_packages
-  with_items:
-  - freeipa-server
-  - freeipa-server-dns
-  - freeipa-server-trust-ad
-
 - name: Remove hostname from /etc/hosts
   become: True
   lineinfile:
