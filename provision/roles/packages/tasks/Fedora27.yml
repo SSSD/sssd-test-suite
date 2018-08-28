@@ -9,12 +9,9 @@
     - gdb
     - git
     - ldb-tools
-    - libselinux-python
+    - libselinux-python3
     - NetworkManager
     - openldap-clients
-    - python
-    - python-dnf
-    - python-ldap
     - tig
     - vim
     - wget

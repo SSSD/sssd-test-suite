@@ -5,7 +5,7 @@ def Guest(guest, box, hostname, ip, memory)
   guest.vm.box = box
   guest.vm.hostname = hostname
   guest.vm.network "private_network", ip: ip
-  
+
   guest.vm.provider :libvirt do |libvirt|
     libvirt.memory = memory
   end
@@ -16,14 +16,14 @@ end
 def LinuxGuest(box, config, name, hostname, ip, memory)
   config.vm.define name do |this|
     Guest(this, box, hostname, ip, memory)
-    
+
     this.vm.synced_folder ".", "/vagrant", disabled: true
-    
+
     sync = {
       "./shared-data" => "/shared/data",
       "./shared-enrollment" => "/shared/enrollment"
     }
-    
+
     # "hostpath:guestpath hostpath:guestpath ..."
     if ENV.has_key?('SSSD_TEST_SUITE_MOUNT')
       ENV['SSSD_TEST_SUITE_MOUNT'].split(" ").each do |mount|
@@ -31,11 +31,11 @@ def LinuxGuest(box, config, name, hostname, ip, memory)
          sync[host] = guest
       end
     end
-    
+
     sync.each do |host, guest|
       this.vm.synced_folder "#{host}", "#{guest}", type: "nfs", nfs_udp: false
     end
-    
+
     if ENV.has_key?('SSSD_TEST_SUITE_BASHRC')
       this.ssh.forward_env = ["SSSD_TEST_SUITE_BASHRC"]
     end
@@ -53,7 +53,7 @@ def WindowsGuest(box, config, name, hostname, ip, memory)
     this.vm.guest = :windows
     this.vm.communicator = "winrm"
     this.winrm.username = ".\\Administrator"
-    
+
     SetupAnsibleProvisioning(this)
   end
 end
@@ -73,12 +73,19 @@ def SetupAnsibleProvisioning(config)
     "ansible_winrm_read_timeout_sec" => 70,
     "ansible_user" => "Administrator"
   }
-  
+
+  linux_settings = {
+    "ansible_python_interpreter" => "python3"
+  }
+
   config.vm.provision :ansible do |ansible|
     ansible.playbook = "./provision/ping.yml"
     ansible.host_vars = {
       "ad"       => windows_settings,
-      "ad-child" => windows_settings
+      "ad-child" => windows_settings,
+      "ipa" => linux_settings,
+      "ldap" => linux_settings,
+      "client" => linux_settings
     }
   end
 end

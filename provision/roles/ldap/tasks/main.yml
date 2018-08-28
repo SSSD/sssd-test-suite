@@ -43,82 +43,21 @@
     enabled: yes
     state: restarted
   when: installed.changed
-
-- name: Remove default organizational units
-  ldap_entry:
-    params: '{{ ldap_auth }}'
-    dn: '{{ item }}'
-    state: absent
-  with_items:
-  - cn=Accounting Managers,ou=Groups,dc=ldap,dc=vm
-  - cn=HR Managers,ou=Groups,dc=ldap,dc=vm
-  - cn=PD Managers,ou=Groups,dc=ldap,dc=vm
-  - cn=QA Managers,ou=Groups,dc=ldap,dc=vm
-  - ou=Groups,dc=ldap,dc=vm
-  - ou=People,dc=ldap,dc=vm
-  - ou=Special Users,dc=ldap,dc=vm
   
-- name: Create organizational units
-  ldap_entry:
-    params: '{{ ldap_auth }}'
-    dn: '{{ item }}'
-    objectClass:
-    - organizationalUnit
-  with_items:
-  - ou=users,dc=ldap,dc=vm
-  - ou=posix_groups,dc=ldap,dc=vm
-  - ou=netgroups,dc=ldap,dc=vm
-  - ou=services,dc=ldap,dc=vm
-  - ou=sudoers,dc=ldap,dc=vm
-  
-- name: Create user 'user-1'
-  ldap_entry:
-    params: '{{ ldap_auth }}'
-    dn: cn=user-1,ou=users,dc=ldap,dc=vm
-    objectClass:
-    - posixAccount
-    attributes:
-      uid: user-1
-      uidNumber: 10001
-      gidNumber: 10001
-      homeDirectory: /home/user-1
-      #userPassword: "123456789"
-      userPassword: "{SHA}98O8HYCOBHMq32eZZczDTKeuNEE="
+- name: 'Remove all objects but "cn=Directory Administrators"'
+  shell: |
+    SEARCH=`ldapsearch -x -D '{{ ldap.bind.dn }}' -w {{ ldap.bind.password }} \
+                       -b {{ ldap.suffix }} -s one                            \
+                       '(&(objectClass=*)(!(cn=Directory Administrators)))'`
+    DN=`echo "$SEARCH" | grep dn | sed "s/dn: \(.*\)/'\1'/" | paste -sd " "`
 
-- name: Create groups for user 'user-1'
-  ldap_entry:
-    params: '{{ ldap_auth }}'
-    dn: 'cn={{ item.name }},ou=posix_groups,dc=ldap,dc=vm'
-    objectClass:
-    - posixGroup
-    attributes:
-      gidNumber: '{{ item.gid }}'
-      memberUid: user-1
-  with_items:
-  - { name: 'group-1', gid: 20001 }
-  - { name: 'group-2', gid: 20002 }
-  
-- name: Create netgroups
-  ldap_entry:
-    params: '{{ ldap_auth }}'
-    dn: 'cn={{ item.name }},ou=Netgroups,dc=ldap,dc=vm'
-    objectClass:
-    - nisNetgroup
-    attributes:
-      nisNetgroupTriple: '({{ item.host }}, {{ item.user }}, {{ item.domain }})'
-      memberNisNetgroup: '{{ item.member }}'
-  with_items:
-  - { name: 'ng-1', host: 'client-1', user: 'user-1', domain: 'ldap.vm', member: '' }
-  - { name: 'ng-2', host: 'client-2', user: 'user-1', domain: 'ldap.vm', member: 'ng-1' }
-  - { name: 'ng-3', host: 'client-3', user: 'user-1', domain: 'ldap.vm', member: 'ng-2' }
+    echo "$SEARCH" | grep numEntries
+    if [ $? -ne 0 ]; then
+      echo "Entries are already removed. Nothing to do."
+      exit 255
+    fi
 
-- name: Create sudo rules
-  ldap_entry:
-    params: '{{ ldap_auth }}'
-    dn: 'cn=allow_all,ou=sudoers,dc=ldap,dc=vm'
-    objectClass:
-    - sudoRole
-    attributes:
-      sudoHost: ALL
-      sudoCommand: ALL
-      sudoUser: ALL
+    eval "ldapdelete -xr -D '{{ ldap.bind.dn }}' -w {{ ldap.bind.password }} $DN"
+  register: result
+  failed_when: "result.rc != 255 and result.rc != 0"
+  changed_when: "result.rc == 0"
