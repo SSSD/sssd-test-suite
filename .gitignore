@@ -1,4 +1,6 @@
 .project
+.linux_box
+.windows_box
 .vagrant/
 shared-data/
 !shared-data/README
