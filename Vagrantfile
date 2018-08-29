@@ -19,6 +19,7 @@ def LinuxGuest(box, config, name, hostname, ip, memory)
 
     this.vm.synced_folder ".", "/vagrant", disabled: true
 
+    rsync = {}
     sync = {
       "./shared-data" => "/shared/data",
       "./shared-enrollment" => "/shared/enrollment"
@@ -34,6 +35,18 @@ def LinuxGuest(box, config, name, hostname, ip, memory)
 
     sync.each do |host, guest|
       this.vm.synced_folder "#{host}", "#{guest}", type: "nfs", nfs_udp: false
+    end
+
+    # "hostpath:guestpath hostpath:guestpath ..."
+    if ENV.has_key?('SSSD_TEST_SUITE_RSYNC')
+      ENV['SSSD_TEST_SUITE_RSYNC'].split(" ").each do |mount|
+         host, guest = mount.split(":")
+         rsync[host] = guest
+      end
+    end
+
+    rsync.each do |host, guest|
+      this.vm.synced_folder "#{host}", "#{guest}", type: "rsync"
     end
 
     if ENV.has_key?('SSSD_TEST_SUITE_BASHRC')
