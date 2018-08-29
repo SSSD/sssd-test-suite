@@ -113,6 +113,11 @@ $ vagrant plugin install winrm-fs
 $ vagrant plugin install winrm-elevated
 ```
 
+6. Install sshfd plugin for Vagrant
+```bash
+$ vagrant plugin install sshfs
+```
+
 ### Preparing machines
 
 Since Vagrant ansible plugin is not yet well suited for a multi-machine

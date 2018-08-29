@@ -17,6 +17,21 @@ def GetBoxName(default, env_var, file)
   return box_name
 end
 
+# Read environment variable to obtain list of synchronized folders.
+# The format is: "hostpath:guestpath hostpath:guestpath ..."
+def GetSyncFolders(env_var)
+  folders = {}
+
+  if ENV.has_key?(env_var)
+    ENV[env_var].split(" ").each do |mount|
+       host, guest = mount.split(":")
+       folders[host] = guest
+    end
+  end
+
+  return folders
+end
+
 def Guest(guest, box, hostname, ip, memory)
   guest.vm.box = box
   guest.vm.hostname = hostname
@@ -35,33 +50,22 @@ def LinuxGuest(box, config, name, hostname, ip, memory)
 
     this.vm.synced_folder ".", "/vagrant", disabled: true
 
-    rsync = {}
-    sync = {
-      "./shared-data" => "/shared/data",
-      "./shared-enrollment" => "/shared/enrollment"
-    }
+    sync_sshfs = GetSyncFolders('SSSD_TEST_SUITE_SSHFS')
+    sync_rsync = GetSyncFolders('SSSD_TEST_SUITE_RSYNC')
+    sync_nfs =   GetSyncFolders('SSSD_TEST_SUITE_NFS')
 
-    # "hostpath:guestpath hostpath:guestpath ..."
-    if ENV.has_key?('SSSD_TEST_SUITE_MOUNT')
-      ENV['SSSD_TEST_SUITE_MOUNT'].split(" ").each do |mount|
-         host, guest = mount.split(":")
-         sync[host] = guest
-      end
+    sync_sshfs.merge!("./shared-data" => "/shared/data")
+    sync_sshfs.merge!("./shared-enrollment" => "/shared/enrollment")
+
+    sync_sshfs.each do |host, guest|
+      this.vm.synced_folder "#{host}", "#{guest}", type: "sshfs", sshfs_opts_append: "-o cache=no"
     end
 
-    sync.each do |host, guest|
+    sync_nfs.each do |host, guest|
       this.vm.synced_folder "#{host}", "#{guest}", type: "nfs", nfs_udp: false
     end
 
-    # "hostpath:guestpath hostpath:guestpath ..."
-    if ENV.has_key?('SSSD_TEST_SUITE_RSYNC')
-      ENV['SSSD_TEST_SUITE_RSYNC'].split(" ").each do |mount|
-         host, guest = mount.split(":")
-         rsync[host] = guest
-      end
-    end
-
-    rsync.each do |host, guest|
+    sync_rsync.each do |host, guest|
       this.vm.synced_folder "#{host}", "#{guest}", type: "rsync"
     end
 
