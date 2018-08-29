@@ -39,8 +39,6 @@ def LinuxGuest(box, config, name, hostname, ip, memory)
     if ENV.has_key?('SSSD_TEST_SUITE_BASHRC')
       this.ssh.forward_env = ["SSSD_TEST_SUITE_BASHRC"]
     end
-
-    SetupAnsibleProvisioning(this)
   end
 end
 
@@ -53,40 +51,6 @@ def WindowsGuest(box, config, name, hostname, ip, memory)
     this.vm.guest = :windows
     this.vm.communicator = "winrm"
     this.winrm.username = ".\\Administrator"
-
-    SetupAnsibleProvisioning(this)
-  end
-end
-
-# We have to setup ansible provisioning everywhere in the same way
-# in order to let vagrant create inventory file automatically.
-#
-# Ansible Windows user needs to be Administrator as it can detect domain
-# on run-time. But vagrant command for rdp needs to know the domain.
-#
-# Also we need to disable certificate validation and increase winrm
-# timeout to make ansible work for Windows guests.
-def SetupAnsibleProvisioning(config)
-  windows_settings = {
-    "ansible_winrm_server_cert_validation" => "ignore",
-    "ansible_winrm_operation_timeout_sec" => 60,
-    "ansible_winrm_read_timeout_sec" => 70,
-    "ansible_user" => "Administrator"
-  }
-
-  linux_settings = {
-    "ansible_python_interpreter" => "python3"
-  }
-
-  config.vm.provision :ansible do |ansible|
-    ansible.playbook = "./provision/ping.yml"
-    ansible.host_vars = {
-      "ad"       => windows_settings,
-      "ad-child" => windows_settings,
-      "ipa" => linux_settings,
-      "ldap" => linux_settings,
-      "client" => linux_settings
-    }
   end
 end
 

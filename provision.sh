@@ -1,5 +1,6 @@
 SSH_ARGS="-o UserKnownHostsFile=/dev/null -o IdentitiesOnly=yes -o ControlMaster=auto -o ControlPersist=60s"
-INVENTORY="./.vagrant/provisioners/ansible/inventory"
+#INVENTORY="./.vagrant/provisioners/ansible/inventory"
+INVENTORY="./provision/inventory.yml"
 PLAYBOOKS="./provision/prepare-guests.yml"
 
 if [[ "x$1" == "x-h" || "x$1" == "x--help" ]]; then

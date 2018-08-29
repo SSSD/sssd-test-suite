@@ -1,0 +1,31 @@
+all:
+  children:
+    windows:
+      hosts:
+        ad:
+          ansible_host: 192.168.100.110
+        ad-child:
+          ansible_host: 192.168.100.120
+      vars:
+        ansible_connection: winrm
+        ansible_port: 5986
+        ansible_user: Administrator
+        ansible_password: vagrant
+        ansible_winrm_server_cert_validation: ignore
+        ansible_winrm_operation_timeout_sec: 60
+        ansible_winrm_read_timeout_sec: 70
+    linux:
+      hosts:
+        ipa:
+          ansible_host: 192.168.100.10
+          ansible_ssh_private_key_file: ./.vagrant/machines/ipa/libvirt/private_key
+        ldap:
+          ansible_host: 192.168.100.20
+          ansible_ssh_private_key_file: ./.vagrant/machines/ldap/libvirt/private_key
+        client:
+          ansible_host: 192.168.100.30
+          ansible_ssh_private_key_file: ./.vagrant/machines/client/libvirt/private_key
+      vars:
+        ansible_port: 22
+        ansible_user: vagrant
+        ansible_python_interpreter: python3
