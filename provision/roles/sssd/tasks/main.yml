@@ -35,8 +35,8 @@
 - name: Join to Active Directory domain
   become: True
   shell: |
-    echo vagrant | realm join {{ ad.domain | quote }}
-    touch /etc/sssd/ad_enrolled
+    echo vagrant | realm join {{ ad.domain | quote }} || exit $?
+    touch /etc/sssd/ad_enrolled || exit $?
   register: installed
   args:
     creates: /etc/sssd/ad_enrolled

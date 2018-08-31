@@ -19,10 +19,18 @@
       --auto-reverse                                   \
       --no-dnssec-validation                           \
       --no-host-dns
+    RET=$?
+    if [ $RET -ne 0 ]; then
+      exit $RET
+    fi
       
     /usr/sbin/ipa-adtrust-install --unattended         \
       --netbios-name={{ ipa.netbios | quote }}         \
       --admin-password={{ ipa.password | quote }}
+    RET=$?
+    if [ $RET -ne 0 ]; then
+      exit $RET
+    fi
   register: installed 
   args:
     creates: /etc/ipa/default.conf
