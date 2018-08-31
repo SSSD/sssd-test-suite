@@ -1,2 +1,12 @@
 - name: 'Packages are the same as in Fedora 27'
   include_tasks: 'Fedora27.yml'
+
+# 389-ds switched to new installation scripts but since the old scripts
+# are just moved to another package for now, we can still use them.
+- name: Install LDAP legacy tools
+  become: True
+  dnf:
+    state: present
+    name:
+    - 389-ds-base-legacy-tools
+  when: inventory_hostname == 'ldap'
