@@ -52,6 +52,7 @@
     - diffstat
     - docbook-style-xsl
     - doxygen
+    - fakeroot
     - findutils
     - freeipa-client
     - gcc
@@ -64,6 +65,7 @@
     - jansson-devel
     - keyutils-libs-devel
     - krb5-devel
+    - krb5-server
     - libcmocka
     - libcmocka-devel
     - libcollection-devel
@@ -108,8 +110,13 @@
     - pkgconfig
     - po4a
     - popt-devel
+    - python2-ldap
+    - python2-dbus
     - python2-devel
+    - python2-requests
+    - python3-dbus
     - python3-devel
+    - python3-requests
     - realmd
     - resolv_wrapper
     - samba-common-tools
@@ -125,6 +132,20 @@
     - systemd-devel
     - systemtap-sdt-devel
     - uid_wrapper
+  when: inventory_hostname == 'client'
+
+- name: Install Client specific packages required for integration tests
+  become: True
+  dnf:
+    state: present
+    name:
+    - openldap-servers
+    - python2-pytest
+    - python3-pytest
+    - python2-ldb
+    - python3-ldb
+    - python2-psutil
+    - python3-psutil
   when: inventory_hostname == 'client'
 
 - name: Install debug information for specific packages
