@@ -1,6 +1,8 @@
+# Script taken from:
+# https://raw.githubusercontent.com/richm/scripts/master/setupssl2.sh
 - name: Fetch SSL setup script
-  get_url:
-    url: https://raw.githubusercontent.com/richm/scripts/master/setupssl2.sh
+  copy:
+    src: setupssl2.sh
     dest: /tmp/setupssl2.sh
     mode: 0700
 
@@ -15,11 +17,17 @@
       slapd.Suffix={{ ldap.suffix | quote }}                \
       slapd.RootDN={{ ldap.bind.dn | quote }}               \
       slapd.RootDNPwd={{ ldap.bind.password | quote }}
-
-    echo {{ ldap.bind.password | quote }} | /tmp/setupssl2.sh /etc/dirsrv/slapd-master-ldap
   register: installed
   args:
-    creates: /etc/dirsrv/slapd-master-ldap
+    creates: '/etc/dirsrv/slapd-{{ ldap.hostname }}-ldap'
+
+- name: Enable SSL for directory server instance
+  become: True
+  shell: |
+    echo {{ ldap.bind.password | quote }} | /tmp/setupssl2.sh /etc/dirsrv/slapd-{{ ldap.hostname }}-ldap
+    touch  /etc/dirsrv/slapd-{{ ldap.hostname }}-ldap/.setupssl2-done
+  args:
+    creates: '/etc/dirsrv/slapd-{{ ldap.hostname }}-ldap/.setupssl2-done'
 
 - name: Copy certificate to shared folder
   become: True

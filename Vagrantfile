@@ -1,7 +1,7 @@
 require './utils.rb'
 
 # Default boxes
-box_linux = "fedora/27-cloud-base"
+box_linux = "fedora/28-cloud-base"
 box_ad    = "peru/windows-server-2016-standard-x64-eval"
 
 # Overwrite default boxes if requested
