@@ -3,7 +3,6 @@
   dnf:
     state: present
     name:
-    - authselect
     - bash-completion
     - dnsmasq
     - gdb

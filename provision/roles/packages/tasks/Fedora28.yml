@@ -1,6 +1,13 @@
 - name: 'Packages are the same as in Fedora 27'
   include_tasks: 'Fedora27.yml'
 
+- name: Install additional packages
+  become: True
+  dnf:
+    state: present
+    name:
+    - authselect
+
 # 389-ds switched to new installation scripts but since the old scripts
 # are just moved to another package for now, we can still use them.
 - name: Install LDAP legacy tools
