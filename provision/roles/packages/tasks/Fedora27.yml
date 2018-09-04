@@ -12,7 +12,9 @@
     - libselinux-python3
     - NetworkManager
     - openldap-clients
+    - systemtap
     - tig
+    - valgrind
     - vim
     - wget
 
