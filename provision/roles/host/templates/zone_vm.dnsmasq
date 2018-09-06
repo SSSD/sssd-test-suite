@@ -1,1 +1,0 @@
-server=/{{ network.dns_tld }}/{{ network.dns_server }}
