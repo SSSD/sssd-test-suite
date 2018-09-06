@@ -1,3 +1,11 @@
+# KCM needs to be enabled in order to join to Active Directory domain
+- name: Start SSSD KCM socket
+  become: True
+  service:
+    name: sssd-kcm.socket
+    enabled: yes
+    state: started
+
 - name: Join IPA domain
   become: True
   shell: |
@@ -31,7 +39,7 @@
     src: /etc/sssd/ipa.keytab
     dest: '/shared/enrollment/{{ inventory_hostname }}/ipa.keytab'
     remote_src: yes
-    
+
 - name: Join to Active Directory domain
   become: True
   shell: |
