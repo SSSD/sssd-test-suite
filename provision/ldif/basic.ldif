@@ -1,0 +1,83 @@
+dn: ou=users,dc=ldap,dc=vm
+objectClass: top
+objectClass: organizationalUnit
+ou: users
+
+dn: ou=posix_groups,dc=ldap,dc=vm
+objectClass: top
+objectClass: organizationalUnit
+ou: posix_groups
+
+dn: ou=netgroups,dc=ldap,dc=vm
+objectClass: top
+objectClass: organizationalUnit
+ou: netgroups
+
+dn: ou=services,dc=ldap,dc=vm
+objectClass: top
+objectClass: organizationalUnit
+ou: services
+
+dn: ou=sudoers,dc=ldap,dc=vm
+objectClass: top
+objectClass: organizationalUnit
+ou: sudoers
+
+# User's password: 123456789
+dn: cn=user-1,ou=users,dc=ldap,dc=vm
+objectClass: top
+objectClass: posixAccount
+cn: user-1
+uid: user-1
+uidNumber: 10001
+gidNumber: 10001
+homeDirectory: /home/user-1
+userPassword: {SHA}98O8HYCOBHMq32eZZczDTKeuNEE=
+
+dn: cn=user-1,ou=posix_groups,dc=ldap,dc=vm
+objectClass: top
+objectClass: posixGroup
+cn: user-1
+gidNumber: 10001
+
+dn: cn=group-1,ou=posix_groups,dc=ldap,dc=vm
+objectClass: top
+objectClass: posixGroup
+cn: group-1
+gidNumber: 20001
+memberUid: user-1
+
+dn: cn=group-2,ou=posix_groups,dc=ldap,dc=vm
+objectClass: top
+objectClass: posixGroup
+cn: group-2
+gidNumber: 20002
+memberUid: user-1
+
+dn: cn=ng-1,ou=netgroups,dc=ldap,dc=vm
+objectClass: top
+objectClass: nisNetgroup
+cn: ng-1
+nisNetgroupTriple: (client-1, user-1, ldap.vm)
+
+dn: cn=ng-2,ou=netgroups,dc=ldap,dc=vm
+objectClass: top
+objectClass: nisNetgroup
+cn: ng-2
+nisNetgroupTriple: (client-1, user-1, ldap.vm)
+memberNisNetgroup: ng-1
+
+dn: cn=ng-3,ou=netgroups,dc=ldap,dc=vm
+objectClass: top
+objectClass: nisNetgroup
+cn: ng-3
+nisNetgroupTriple: (client-1, user-1, ldap.vm)
+memberNisNetgroup: ng-2
+
+dn: cn=allow_all,ou=sudoers,dc=ldap,dc=vm
+objectClass: top
+objectClass: sudoRole
+cn: allow_all
+sudoHost: ALL
+sudoCommand: ALL
+sudoUser: ALL
