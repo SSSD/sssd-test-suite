@@ -35,15 +35,19 @@ machine enrolled to those servers, ready to build and debug your code.
     as certificates and keytabs are stored in this directory.
   * `./shared-data => /shared/data/` -- custom data to share.
   
-* Additionally, you can mount more folders by defining
-  `SSSD_TEST_SUITE_MOUNT` environment variable with the following format:
-  `host_path:guest_path host_path:guest_path ...`. For example:
+* Additionally, you can mount more folders by defining one or more of these variables:
+  * `SSSD_TEST_SUITE_SSHFS` - mount folders with sshfs (recommended)
+  * `SSSD_TEST_SUITE_NFS` - mount folders with nfs
+  * `SSSD_TEST_SUITE_RSYNC` - mount folders with rsync
+* Each variable takes the following format:
+  * `host_path:guest_path host_path:guest_path ...`
+  * For example:
 
 ```
-export SSSD_TEST_SUITE_MOUNT=""
+export SSSD_TEST_SUITE_SSHFS=""
 
-SSSD_TEST_SUITE_MOUNT+=" $MY_WORKSPACE:/shared/workspace"
-SSSD_TEST_SUITE_MOUNT+=" $MY_USER_HOME/packages:/shared/packages"
+SSSD_TEST_SUITE_SSHFS+=" $MY_WORKSPACE:/shared/workspace"
+SSSD_TEST_SUITE_SSHFS+=" $MY_USER_HOME/packages:/shared/packages"
 ``` 
 
 * You can also define `SSSD_TEST_SUITE_BASHRC`. If this variable is set
@@ -72,7 +76,7 @@ This guide is written for Fedora systems. It may require different packages or
 package tool on other Linux distributions.
 
 **Needed resources:**
-* Approximately `5.5 GiB` of operating memory
+* Approximately `6 GiB` of operating memory
 * Approximately `47 GiB` of disk space
 
 1. Install Ansible
@@ -85,50 +89,34 @@ package tool on other Linux distributions.
     python3-winrm
 ```
 
-2. Install latest Vagrant (at least 2.0 is needed)
+2. Install latest Vagrant (at least 2.0 is needed) and required plugins
 ```bash
-# dnf remove vagrant
-# dnf install -y https://releases.hashicorp.com/vagrant/2.0.0/vagrant_2.0.0_x86_64.rpm
-```
-
-3. Install packages needed for Vagrant's libvirt plugin
-```bash
-# dnf install -y         \
+# dnf install -y           \
     qemu-kvm               \
     libvirt-daemon-kvm     \
     libvirt-devel          \
     ruby-devel             \
-    rubygem-ruby-libvirt
+    rubygem-ruby-libvirt   \
+    vagrant                \
+    vagrant-sshfs          \
+    vagrant-libvirt        \
 ```
-
-4. Install libvirt plugin for Vagrant
-```bash
-$ vagrant plugin install vagrant-libvirt
-```
-
-5. Install winrm plugin for Vagrant
+3. Install winrm plugin for Vagrant
 ```bash
 $ vagrant plugin install winrm
 $ vagrant plugin install winrm-fs
 $ vagrant plugin install winrm-elevated
 ```
 
-6. Install sshfd plugin for Vagrant
-```bash
-$ vagrant plugin install sshfs
-```
-
 ### Preparing machines
 
-Since Vagrant ansible plugin is not yet well suited for a multi-machine
-provisioning, it needs to be done by a custom shell script instead of
-vagrant native provisioning tools.
+For the first time setup run `./setup.sh` within the source directory. This script
+will provision your host machine and bring up and provision the guests.
 
-Simply call `./setup.sh` and it will prepare your host machine to use internal
-DNS server (only for zones managed by the server). It will also include `polkit`
-rule for `libvirt` so it does not require `root` password each time `vagrant`
-is used. And at last, it will setup your firewall to allow required services
-for NFS.
+There are several changes that will be done to your host machine.It will be configured
+to use internal DNS server (only for zones managed by the server). It will also
+include `polkit` rule for `libvirt` so it does not require `root` password each time `vagrant`
+is used.
 
 ```bash
 $ ./setup.sh
@@ -155,4 +143,43 @@ vagrant halt ad-child
 # Restore Windows machines when needed
 vagrant up ad
 vagrant up ad-child
+```
+
+## Tips
+
+### Using NFS for shared folders
+
+It is possible to setup NFS shared folders by exporting `SSSD_TEST_SUITE_NFS` variable.
+However you need to make sure that NFS is installed and firewall is setup correctly
+on your machine.
+
+```
+# dnf install -y firewalld
+# firewall-cmd --permanent --add-service=nfs
+# firewall-cmd --permanent --add-service=mountd
+# firewall-cmd --permanent --add-service=rpc-bind
+# systemctl reload firewalld.service
+```
+
+### Importing LDIF to the LDAP server
+
+There are two scripts that you can use with provisioned LDAP server:
+* `./provision/ldap-clear.sh` - this will remove all existing object from the server
+* `./provision/ldap-import.sh LDIF-FILE` - this will import content of `LDIF-FILE` to the server
+
+There are some prepared LDIF's at `./provision/ldif`.
+
+### Switch vagrant boxes
+
+You can control which vagrant box should be used for the test environment by these variables:
+
+* `SSSD_TEST_SUITE_LINUX_BOX`
+* `SSSD_TEST_SUITE_WINDOWS_BOX`
+
+However, it should be used only if there are no existing machines set up. Vagrantfile will remember
+this setting in `./.linux_box` and `./.windows_box` until you change it. For example:
+
+```
+$ vagrant destroy
+$ SSSD_TEST_SUITE_LINUX_BOX="fedora/28-cloud-base" SSSD_TEST_SUITE_WINDOWS_BOX="peru/windows-server-2016-standard-x64-eval" ./setup.sh
 ```
