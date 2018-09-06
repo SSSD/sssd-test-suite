@@ -13,10 +13,8 @@ success_or_die $? "Unable to provision host machine!"
 
 # It is better to bring machines up one by one to avoid timeout issues
 echo "2. Bringing up guests one by one..."
-for HOST in ad ad-child ipa ldap client; do
-    vagrant up $HOST
-    success_or_die $? "Unable to bring up host: $HOST!"
-done
+./up.sh
+success_or_die $? "Unable to bring up guests!"
 
 echo "3. Provisioning guests..."
 ./provision.sh
