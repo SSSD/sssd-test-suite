@@ -15,8 +15,8 @@ puts ""
 # Create SSSD environment
 Vagrant.configure("2") do |config|
   LinuxGuest(  box_linux, config, "ipa",      "master.ipa.vm",    "192.168.100.10",  1792)
-  LinuxGuest(  box_linux, config, "ldap",     "master.ldap.vm",   "192.168.100.20",  512)
+  LinuxGuest(  box_linux, config, "ldap",     "master.ldap.vm",   "192.168.100.20",  1024)
   LinuxGuest(  box_linux, config, "client",   "master.client.vm", "192.168.100.30",  1536)
-  WindowsGuest(box_ad,    config, "ad",       "root",             "192.168.100.110", 1024)
-  WindowsGuest(box_ad,    config, "ad-child", "child",            "192.168.100.120", 1024)
+  WindowsGuest(box_ad,    config, "ad",       "root-dc",          "192.168.100.110", 1024)
+  WindowsGuest(box_ad,    config, "ad-child", "child-dc",         "192.168.100.120", 1024)
 end
