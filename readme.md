@@ -12,7 +12,7 @@ machine enrolled to those servers, ready to build and debug your code.
 
 | Vagrant name |        IP         |        FQDN        |   Description                                                   |
 |--------------|-------------------|--------------------|-----------------------------------------------------------------|
-| ipa          | `192.168.100.10`  | `master.ipa.vm`    | IPA and main DNS server for zones 'vm' and network reverse zone |
+| ipa          | `192.168.100.10`  | `master.ipa.vm`    | IPA server                                                      |
 | ldap         | `192.168.100.20`  | `master.ldap.vm`   | TLS ready 389 Directory Server                                  |
 | client       | `192.168.100.30`  | `master.client.vm` | Client machine with configured SSSD                             |
 | ad           | `192.168.100.110` | `root.ad.vm`       | Active Directory Forest root domain                             |
@@ -113,9 +113,11 @@ $ vagrant plugin install winrm-elevated
 For the first time setup run `./setup.sh` within the source directory. This script
 will provision your host machine and bring up and provision the guests.
 
-There are several changes that will be done to your host machine.It will be configured
-to use internal DNS server (only for zones managed by the server). It will also
-include `polkit` rule for `libvirt` so it does not require `root` password each time `vagrant`
+This is a list of changes to your host machine:
+
+1. Install required packages
+2. Configure `dnsmasq` via `NetworkManager` to resolve all machines through DNS names.
+3. Install `polkit` rule for `libvirt` so it does not require `root` password each time `vagrant`
 is used.
 
 ```bash

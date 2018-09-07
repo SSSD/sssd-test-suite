@@ -1,9 +1,3 @@
-# Windows DNS client needs to be set multiple times,
-# 1) to ensure that forest  domain is reachable when installing child domain,
-# 2) to ensure that other domains are reachable.
-# AD server will use otherwise itself as DNS server and we would have to
-# create glue records.
-
 ---
 - hosts: ipa:ldap:client
   roles:
@@ -16,7 +10,6 @@
   gather_facts: no
   roles:
   - win-common
-  - win-dnsclient
   vars_files:
   - variables.yml
 
@@ -24,7 +17,6 @@
   gather_facts: no
   roles:
   - win-forest
-  - win-dnsclient
   vars_files:
   - variables.yml
 
@@ -39,7 +31,6 @@
   gather_facts: no
   roles:
   - win-domain
-  - win-dnsclient
   vars_files:
   - variables.yml
 
