@@ -13,6 +13,7 @@
   - variables.yml
 
 - hosts: ad:ad-child
+  gather_facts: no
   roles:
   - win-common
   - win-dnsclient
@@ -20,6 +21,7 @@
   - variables.yml
 
 - hosts: ad
+  gather_facts: no
   roles:
   - win-forest
   - win-dnsclient
@@ -27,12 +29,14 @@
   - variables.yml
 
 - hosts: ipa
+  gather_facts: no
   roles:
   - ipa
   vars_files:
   - variables.yml
-  
+
 - hosts: ad-child
+  gather_facts: no
   roles:
   - win-domain
   - win-dnsclient
@@ -40,18 +44,21 @@
   - variables.yml
 
 - hosts: ipa:ldap:client
+  gather_facts: no
   roles:
   - dnsclient
   vars_files:
   - variables.yml
 
 - hosts: ldap
+  gather_facts: no
   roles:
   - ldap
   vars_files:
   - variables.yml
   
 - hosts: client
+  gather_facts: no
   roles:
   - sssd
   vars_files:
