@@ -1,18 +1,18 @@
-- name: 'Create new AD forest {{ ad_domain }}'
+- name: 'Create new AD forest {{ ad.domain }}'
   win_shell: |
     Import-Module ADDSDeployment
 
     Install-ADDSForest                                                        \
-      -DomainName "{{ ad_domain }}"                                           \
+      -DomainName "{{ ad.domain }}"                                           \
       -CreateDnsDelegation:$false                                             \
-      -DomainNetbiosName "{{ ad_netbios }}"                                   \
-      -ForestMode "{{ forest_mode }}"                                         \
-      -DomainMode "{{ domain_mode }}"                                         \
+      -DomainNetbiosName "{{ ad.netbios }}"                                   \
+      -ForestMode "{{ ad.forest_mode }}"                                      \
+      -DomainMode "{{ ad.domain_mode }}"                                      \
       -Force:$true                                                            \
       -InstallDns:$true                                                       \
       -NoRebootOnCompletion:$true                                             \
       -SafeModeAdministratorPassword                                          \
-        (ConvertTo-SecureString '{{ ad_safe_password }}' -AsPlainText -Force)
+        (ConvertTo-SecureString '{{ ad.safe_password }}' -AsPlainText -Force)
   register: installation
   args:
     creates: 'C:\Windows\NTDS'

@@ -33,16 +33,22 @@ ldap: {
 ad: {
   ip: '{{ network.base_ip }}.110',
   domain: 'ad.{{ network.dns_tld }}',
-  hostname: 'master',
-  fqn: 'master.ad.{{ network.dns_tld }}'
+  hostname: 'root-dc',
+  fqn: 'root-dc.ad.{{ network.dns_tld }}',
+  netbios: 'ADROOT',
+  forest_mode: WinThreshold,
+  domain_mode: WinThreshold,
+  safe_password: Secret123
 }
 
 # AD child server configuration
 ad_child: {
   ip: '{{ network.base_ip }}.120',
   domain: 'child.{{ ad.domain }}',
-  hostname: 'master',
-  fqn: 'master.child.{{ ad.domain }}'
+  hostname: 'child-dc',
+  fqn: 'child-dc.child.{{ ad.domain }}',
+  netbios: 'ADCHILD',
+  safe_password: Secret123
 }
 
 # Client configuration

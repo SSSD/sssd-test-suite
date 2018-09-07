@@ -1,7 +1,0 @@
-# Active Directory domain to create under a forest
-ad_child_domain: 'sub'
-ad_child_netbios: 'ADCHILD'
-ad_parent_domain: 'ad.vm'
-
-# Safe password for the domain controller
-ad_safe_password: 'Secret123'
