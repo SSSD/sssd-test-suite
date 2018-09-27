@@ -11,11 +11,15 @@
   become: True
   shell: |
     dnf clean all --enablerepo=\*
-  when: ansible_pkg_mgr == 'apt'
+  args:
+    warn: False
+  when: ansible_pkg_mgr == 'dnf'
 
 - name: Clean package manager data (apt)
   become: True
   shell: |
     apt-get clean -y
     apt-get autoclean -y
+  args:
+    warn: False
   when: ansible_pkg_mgr == 'apt'

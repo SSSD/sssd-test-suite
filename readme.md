@@ -173,15 +173,65 @@ There are some prepared LDIF's at `./provision/ldif`.
 
 ### Switch vagrant boxes
 
-You can control which vagrant box should be used for the test environment by these variables:
+There is a configuration file `config.json` where you can set different boxes
+for different machines. You can also set `sshfs`, `rsync` and `nfs` shared folders
+here in addition to those set by environment variables.
 
-* `SSSD_TEST_SUITE_LINUX_BOX`
-* `SSSD_TEST_SUITE_WINDOWS_BOX`
-
-However, it should be used only if there are no existing machines set up. Vagrantfile will remember
-this setting in `./.linux_box` and `./.windows_box` until you change it. For example:
-
+Example:
+```json
+{
+  "boxes": {
+    "ad": {
+      "name": "peru/windows-server-2016-standard-x64-eval",
+      "url": ""
+    },
+    "ad-child": {
+      "name": "peru/windows-server-2016-standard-x64-eval",
+      "url": ""
+    },
+    "ipa": {
+      "name": "fedora/28-cloud-base",
+      "url": ""
+    },
+    "ldap": {
+      "name": "fedora/28-cloud-base",
+      "url": ""
+    },
+    "client": {
+      "name": "fedora/28-cloud-base",
+      "url": ""
+    }
+  },
+  "folders": {
+    "sshfs": [
+      {
+        "host": "./shared-enrollment",
+        "guest": "/shared/enrollment"
+      }
+    ],
+    "rsync": [],
+    "nfs": []
+  }
+}
 ```
-$ vagrant destroy
-$ SSSD_TEST_SUITE_LINUX_BOX="fedora/28-cloud-base" SSSD_TEST_SUITE_WINDOWS_BOX="peru/windows-server-2016-standard-x64-eval" ./setup.sh
+
+### Create your own provisioned box
+
+It is possible to create pre-provisioned boxes in order to speed up the first time setup.
+
+1. Run `./setup.sh` without machines enrollment
+```bash
+vagrant destroy
+./setup.sh --skip-tags "enroll-all"
 ```
+2. Run `./create_boxes.sh` (see `./create_boxes.sh --help`)
+```bash
+./create_boxes.sh fedora28 http://sssd.ci /home/qemu
+```
+3. Modify `config.json` to use your new boxes
+4. Establish trust between IPA and AD and enroll client to domains
+```bash
+./provision.sh ./provision/enroll.yml
+```
+
+

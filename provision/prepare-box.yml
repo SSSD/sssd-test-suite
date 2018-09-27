@@ -1,0 +1,7 @@
+---
+- hosts: ipa:ldap:client
+  roles:
+  - box
+  vars_files:
+  - variables.yml
+

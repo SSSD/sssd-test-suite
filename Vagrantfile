@@ -1,22 +1,59 @@
-require './utils.rb'
+require './ruby/config.rb'
+require './ruby/machine.rb'
+require './ruby/guest.rb'
 
 # Default boxes
 box_linux = "fedora/28-cloud-base"
 box_ad    = "peru/windows-server-2016-standard-x64-eval"
 
-# Overwrite default boxes if requested
-box_linux = GetBoxName(box_linux, "SSSD_TEST_SUITE_LINUX_BOX", ".linux_box")
-box_ad =    GetBoxName(box_ad, "SSSD_TEST_SUITE_WINDOWS_BOX", ".windows_box")
+config = Config.new("config.json", box_linux, box_ad)
 
-puts "Using Linux box:   #{box_linux}"
-puts "Using Windows box: #{box_ad}"
-puts ""
+machines = [
+  Machine.new(
+    name: "ipa",
+    type: Machine::LINUX,
+    hostname: "master.ipa.vm",
+    ip: "192.168.100.10",
+    memory: 1792,
+    config: config
+  ),
+  Machine.new(
+    name: "ldap",
+    type: Machine::LINUX,
+    hostname: "master.ldap.vm",
+    ip: "192.168.100.20",
+    memory: 1024,
+    config: config
+  ),
+  Machine.new(
+    name: "client",
+    type: Machine::LINUX,
+    hostname: "master.client.vm",
+    ip: "192.168.100.30",
+    memory: 1536,
+    config: config
+  ),
+  Machine.new(
+    name: "ad", 
+    type: Machine::WINDOWS,
+    hostname: "root-dc",
+    ip: "192.168.100.110",
+    memory: 1024,
+    config: config
+  ),
+  Machine.new(
+    name: "ad-child",
+    type: Machine::WINDOWS,
+    hostname: "child-dc",
+    ip: "192.168.100.120",
+    memory: 1024,
+    config: config
+  ),  
+]
 
 # Create SSSD environment
-Vagrant.configure("2") do |config|
-  LinuxGuest(  box_linux, config, "ipa",      "master.ipa.vm",    "192.168.100.10",  1792)
-  LinuxGuest(  box_linux, config, "ldap",     "master.ldap.vm",   "192.168.100.20",  1024)
-  LinuxGuest(  box_linux, config, "client",   "master.client.vm", "192.168.100.30",  1536)
-  WindowsGuest(box_ad,    config, "ad",       "root-dc",          "192.168.100.110", 1024)
-  WindowsGuest(box_ad,    config, "ad-child", "child-dc",         "192.168.100.120", 1024)
+Vagrant.configure("2") do |vagrant_config|
+  machines.each do |machine|
+    Guest.Add(config, vagrant_config, machine)
+  end
 end

@@ -48,9 +48,4 @@
   vars_files:
   - variables.yml
   
-- hosts: client
-  gather_facts: no
-  roles:
-  - sssd
-  vars_files:
-  - variables.yml
+- import_playbook: enroll.yml

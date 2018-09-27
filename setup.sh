@@ -17,7 +17,7 @@ echo "2. Bringing up guests one by one..."
 success_or_die $? "Unable to bring up guests!"
 
 echo "3. Provisioning guests..."
-./provision.sh
+./provision.sh ./provision/prepare-guests.yml all $@
 success_or_die $? "Unable to provision guests!"
 
 echo "Guest machines are ready."

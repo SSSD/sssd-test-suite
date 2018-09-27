@@ -4,12 +4,6 @@
     policy: targeted
     state: permissive
 
-- name: 'Create /shared/enrollment/{{ inventory_hostname }} directory'
-  become: True
-  file:
-    path: '/shared/enrollment/{{ inventory_hostname }}/'
-    state: directory
-
 - name: Add .bashrc for user
   become: True
   template:

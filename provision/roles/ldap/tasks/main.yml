@@ -29,13 +29,6 @@
   args:
     creates: '/etc/dirsrv/slapd-{{ ldap.hostname }}-ldap/.setupssl2-done'
 
-- name: Copy certificate to shared folder
-  become: True
-  copy:
-    src: /etc/dirsrv/slapd-master-ldap/cacert.asc
-    dest: '/shared/enrollment/{{ inventory_hostname }}/'
-    remote_src: yes
-
 - name: Restart directory server
   become: True
   service:
