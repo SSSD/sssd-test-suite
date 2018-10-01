@@ -1,6 +1,6 @@
-require './ruby/config.rb'
-require './ruby/machine.rb'
-require './ruby/guest.rb'
+require_relative './ruby/config.rb'
+require_relative './ruby/machine.rb'
+require_relative './ruby/guest.rb'
 
 # Default boxes
 box_linux = "fedora/28-cloud-base"

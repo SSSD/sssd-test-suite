@@ -1,5 +1,5 @@
-require './ruby/config.rb'
-require './ruby/machine.rb'
+require_relative './config.rb'
+require_relative './machine.rb'
 
 class Guest
   def self.Add(config, vagrant_config, machine)

@@ -1,5 +1,5 @@
 require 'json'
-require './ruby/machine.rb'
+require_relative './machine.rb'
 
 class Hash
   def dig(*path)

@@ -1,4 +1,4 @@
-require './ruby/config.rb'
+require_relative './config.rb'
 
 class Machine
   attr_reader :name, :type, :hostname, :ip, :memory, :box, :url
