@@ -1,2 +1,0 @@
-This directory is shared with your Linux guest machines and mounted at
-/shared/data. Use this directory to share data between host and guests.

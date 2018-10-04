@@ -2,23 +2,28 @@
   "boxes": {
     "ad": {
       "name": "peru/windows-server-2016-standard-x64-eval",
-      "url": ""
+      "url": "",
+      "memory": 1024
     },
     "ad-child": {
       "name": "peru/windows-server-2016-standard-x64-eval",
-      "url": ""
+      "url": "",
+      "memory": 1024
     },
     "ipa": {
       "name": "fedora/28-cloud-base",
-      "url": ""
+      "url": "",
+      "memory": 2048
     },
     "ldap": {
       "name": "fedora/28-cloud-base",
-      "url": ""
+      "url": "",
+      "memory": 1024
     },
     "client": {
       "name": "fedora/28-cloud-base",
-      "url": ""
+      "url": "",
+      "memory": 2048
     }
   },
   "folders": {

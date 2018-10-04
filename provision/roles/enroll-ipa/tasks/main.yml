@@ -29,11 +29,19 @@
   local_action:
     shell /usr/bin/trust anchor "{{ playbook_dir }}/../shared-enrollment/ipa/ca.crt"
   when: ipa_cert.changed
+  
+- name: Install IPA-AD trust
+  become: True
+  shell: |
+    /usr/sbin/ipa-adtrust-install --unattended         \
+      --netbios-name={{ ipa.netbios | quote }}         \
+      --admin-password={{ ipa.password | quote }}
+  when: ipa_installation is not defined or ipa_installation.changed
 
 - name: 'Setup trust with {{ ad.domain }}'
   shell: |
     echo {{ ipa.password | quote }} | kinit admin
-     
+
     ipa trust-show {{ ad.domain | quote }}
     if [ $? -eq 0 ]; then
       echo "Trust with {{ ad.domain | quote }} already exists. Nothing to do."

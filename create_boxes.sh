@@ -1,9 +1,10 @@
 #!/bin/bash
 
-if [[ $# -ne 3 ||  "$1" == "-h" || "$1" == "--help" ]]; then
+if [[ $# -ne 4 ||  "$1" == "-h" || "$1" == "--help" ]]; then
     echo "Create vagrant boxes of SSSD Test Suite machines"
     echo "./create_boxes.sh BOX-NAME URL LIBVIRT-POOL"
-    echo "  BOX-NAME     Name of the resulting boxes."
+    echo "  LINUX-OS     Name of the resulting boxes."
+    echo "  WINDOWS-OS   Name of the resulting boxes."
     echo "  URL          URL where the resulting image will be stored."
     echo "  LIBVIRT-POOL Path to libvirt directory where disk images are stored."
     echo ""
@@ -13,14 +14,15 @@ if [[ $# -ne 3 ||  "$1" == "-h" || "$1" == "--help" ]]; then
 fi
 
 LINUX_GUESTS="ipa ldap client"
-GUESTS="ad ad-child $LINUX_GUESTS"
+WINDOWS_GUESTS="ad ad-child"
+GUESTS="$WINDOWS_GUESTS $LINUX_GUESTS"
 
-NAME=$1
-URL=$2
-POOL=$3
+LINUX=$1
+WINDOWS=$2
+URL=$3
+POOL=$4
 
-BOX_LOCATION="./boxes/$NAME"
-METADATA="$BOX_LOCATION/metadata.json"
+BOX_LOCATION="./boxes"
 VERSION=`date +%Y%m%d`.01
 
 success_or_die() {
@@ -41,10 +43,10 @@ echo "2. Zero out empty space"
 for GUEST in $LINUX_GUESTS; do
     SSSD_TEST_SUITE_BOX="yes" vagrant up $GUEST
     success_or_die $? "Unable to bring up guest: $GUEST!"
-    
+
     ./provision.sh provision/prepare-box.yml $GUEST
     success_or_die $? "Unable to prepare box: $GUEST!"
-    
+
     vagrant halt $GUEST
     success_or_die $? "Unable to halt guest: $GUEST!"
 done
@@ -57,27 +59,35 @@ for GUEST in $LINUX_GUESTS; do
     sudo mv $IMG $OLD
     sudo qemu-img convert -O qcow2 $OLD $IMG
     success_or_die $? "Unable to convert image: $OLD!"
-    
+
     sudo rm -f $OLD
 done
 
 echo "4. Create boxes"
 sudo chmod a+r $POOL/sssd-test-suite_*.img
-for GUEST in $GUESTS; do
-    mkdir -p $BOX_LOCATION &> /dev/null
-    vagrant package $GUEST --output="sssd-$NAME-$GUEST-$VERSION.box"
-    success_or_die $? "Unable to create box: $GUEST!"
-    mv sssd-$NAME-$GUEST-$VERSION.box $BOX_LOCATION/sssd-$NAME-$GUEST-$VERSION.box
-done
 
-echo "5. Create metadata"
-rm -f $METADATA
-for GUEST in $GUESTS; do
-    CHECKSUM=`sha256sum -b "$BOX_LOCATION/sssd-$NAME-$GUEST-$VERSION.box" | cut -d ' ' -f1`
-    cat >> $METADATA <<EOF
+for name in $LINUX $WINDOWS; do
+    if [ $name == $LINUX ]; then
+        guests=$LINUX_GUESTS
+        vagrantfile="$BOX_LOCATION/vagrant-files/linux.vagrantfile"
+    else
+        guests=$WINDOWS_GUESTS
+        vagrantfile="$BOX_LOCATION/vagrant-files/windows.vagrantfile"
+    fi
+
+    for guest in $guests; do
+        boxname="sssd-$name-$guest-$VERSION.box"
+        vagrant package $guest                                            \
+            --vagrantfile="$vagrantfile"                                  \
+            --output="$boxname"
+        success_or_die $? "Unable to create box: $guest!"
+        mv $boxname $BOX_LOCATION/$boxname
+
+        sum=`sha256sum -b "$BOX_LOCATION/$boxname" | cut -d ' ' -f1`
+        cat >> "$BOX_LOCATION/sssd-$name-$guest-$VERSION.json" <<EOF
 {
-    "name": "sssd-$NAME-$GUEST",
-    "description": "SSSD Test Suite '$NAME' $GUEST",
+    "name": "sssd-$name-$guest",
+    "description": "SSSD Test Suite '$name' $guest",
     "versions": [
         {
             "version": "$VERSION",
@@ -85,17 +95,16 @@ for GUEST in $GUESTS; do
             "providers": [
                 {
                     "name": "libvirt",
-                    "url": "$URL/$NAME/sssd-$NAME-$GUEST-$VERSION.box",
+                    "url": "$URL/sssd-$name-$guest-$VERSION.box",
                     "checksum_type": "sha256",
-                    "checksum": "$CHECKSUM"
+                    "checksum": "$sum"
                 }
             ]
         }
     ]
-},
+}
 EOF
+    done
 done
-
-sed -i '$ s/,$/\n/' $METADATA
 
 exit 0

@@ -19,18 +19,22 @@
       --auto-reverse                                   \
       --no-dnssec-validation                           \
       --no-host-dns
-    RET=$?
-    if [ $RET -ne 0 ]; then
-      exit $RET
-    fi
-      
-    /usr/sbin/ipa-adtrust-install --unattended         \
-      --netbios-name={{ ipa.netbios | quote }}         \
-      --admin-password={{ ipa.password | quote }}
-    RET=$?
-    if [ $RET -ne 0 ]; then
-      exit $RET
-    fi
   register: ipa_installation
   args:
     creates: /etc/ipa/default.conf
+
+- name: Remove vagrant IP addresses from /etc/hosts because they can change over time
+  become: True
+  lineinfile:
+    path: /etc/hosts
+    regexp: '^(?!{{ ipa.ip }}).*master.ipa.vm master$'
+    state: absent
+  register: etc_hosts
+
+- name: Restart NetworkManager
+  become: True
+  service:
+    name: NetworkManager.service
+    enabled: yes
+    state: restarted
+  when: etc_hosts.changed

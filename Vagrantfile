@@ -14,7 +14,6 @@ machines = [
     type: Machine::LINUX,
     hostname: "master.ipa.vm",
     ip: "192.168.100.10",
-    memory: 1792,
     config: config
   ),
   Machine.new(
@@ -22,7 +21,6 @@ machines = [
     type: Machine::LINUX,
     hostname: "master.ldap.vm",
     ip: "192.168.100.20",
-    memory: 1024,
     config: config
   ),
   Machine.new(
@@ -30,15 +28,13 @@ machines = [
     type: Machine::LINUX,
     hostname: "master.client.vm",
     ip: "192.168.100.30",
-    memory: 1536,
     config: config
   ),
   Machine.new(
-    name: "ad", 
+    name: "ad",
     type: Machine::WINDOWS,
     hostname: "root-dc",
     ip: "192.168.100.110",
-    memory: 1024,
     config: config
   ),
   Machine.new(
@@ -46,9 +42,8 @@ machines = [
     type: Machine::WINDOWS,
     hostname: "child-dc",
     ip: "192.168.100.120",
-    memory: 1024,
     config: config
-  ),  
+  )
 ]
 
 # Create SSSD environment

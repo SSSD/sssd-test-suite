@@ -23,7 +23,7 @@ ansible-playbook                                               \
   --inventory-file="$INVENTORY"                                \
   $PARAMS                                                      \
   $PLAYBOOK
-    
+
 if [ $? -ne 0 ]; then
     echo "Playbook execution failed!"
     exit 1

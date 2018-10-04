@@ -6,8 +6,6 @@ if [ ! -z "$SSSD_TEST_SUITE_BASHRC" ]; then
         . $SSSD_TEST_SUITE_BASHRC
         return
     fi
-    
-    echo "File not found: $SSSD_TEST_SUITE_BASHRC"
 fi
 
 # Source global definitions

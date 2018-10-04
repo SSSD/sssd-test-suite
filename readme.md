@@ -76,7 +76,7 @@ This guide is written for Fedora systems. It may require different packages or
 package tool on other Linux distributions.
 
 **Needed resources:**
-* Approximately `6 GiB` of operating memory
+* Approximately `7 GiB` of operating memory
 * Approximately `47 GiB` of disk space
 
 1. Install Ansible
@@ -183,23 +183,28 @@ Example:
   "boxes": {
     "ad": {
       "name": "peru/windows-server-2016-standard-x64-eval",
-      "url": ""
+      "url": "",
+      "memory": 1024
     },
     "ad-child": {
       "name": "peru/windows-server-2016-standard-x64-eval",
-      "url": ""
+      "url": "",
+      "memory": 1024
     },
     "ipa": {
       "name": "fedora/28-cloud-base",
-      "url": ""
+      "url": "",
+      "memory": 2048
     },
     "ldap": {
       "name": "fedora/28-cloud-base",
-      "url": ""
+      "url": "",
+      "memory": 1024
     },
     "client": {
       "name": "fedora/28-cloud-base",
-      "url": ""
+      "url": "",
+      "memory": 2048
     }
   },
   "folders": {
@@ -234,4 +239,16 @@ vagrant destroy
 ./provision.sh ./provision/enroll.yml
 ```
 
+### Re-use prepared vagrant boxes
+
+We have prepared a [sssd-vagrant](https://app.vagrantup.com/sssd-vagrant) group on vagrant
+cloud where we put already provisioned boxes that can be used directly on your machine.
+
+The machines are not currently enrolled to each other so you need to run one of two
+provisioning scripts:
+
+1. `./up.sh && ./provision.sh ./provision/prepare-guests.yml` -- if you need to provision
+one or more machines.
+2. `./up.sh && ./provision.sh ./provision/enroll.yml` -- if all machines are provisioned
+and you only need to establish trust between IPA and AD domains and enroll client into them.
 

@@ -6,20 +6,3 @@
 
 - name: 'Include distribution specific package tasks [{{ ansible_distribution }} {{ ansible_distribution_major_version }}]'
   include_tasks: '{{ ansible_distribution }}{{ ansible_distribution_major_version }}.yml'
-
-- name: Clean package manager data (dnf)
-  become: True
-  shell: |
-    dnf clean all --enablerepo=\*
-  args:
-    warn: False
-  when: ansible_pkg_mgr == 'dnf'
-
-- name: Clean package manager data (apt)
-  become: True
-  shell: |
-    apt-get clean -y
-    apt-get autoclean -y
-  args:
-    warn: False
-  when: ansible_pkg_mgr == 'apt'
