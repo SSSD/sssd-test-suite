@@ -14,9 +14,10 @@
   - variables.yml
 
 - hosts: ad
-  gather_facts: no
+  gather_facts: yes
   roles:
   - win-forest
+  - { role: win-dns, domain: '{{ ad.domain }}', hostname: '{{ ad.hostname }}' }
   vars_files:
   - variables.yml
 
@@ -28,9 +29,10 @@
   - variables.yml
 
 - hosts: ad-child
-  gather_facts: no
+  gather_facts: yes
   roles:
   - win-domain
+  - { role: win-dns, domain: '{{ ad_child.domain }}', hostname: '{{ ad_child.hostname }}' }
   vars_files:
   - variables.yml
 
