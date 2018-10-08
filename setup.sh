@@ -8,7 +8,7 @@ success_or_die() {
 }
 
 echo "1. Preparing host..."
-ansible-playbook -i "localhost," -c local "./provision/prepare-host.yml"
+./provision.sh ./provision/prepare-host.yml localhost $@
 success_or_die $? "Unable to provision host machine!"
 
 # It is better to bring machines up one by one to avoid timeout issues

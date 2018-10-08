@@ -1,5 +1,11 @@
 all:
   children:
+    local:
+      hosts:
+        localhost:
+      vars:
+        ansible_connection: local
+        ansible_python_interpreter: python3
     windows:
       hosts:
         ad:
