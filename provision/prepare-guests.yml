@@ -34,7 +34,7 @@
   vars_files:
   - variables.yml
 
-- hosts: ipa:ldap:client
+- hosts: ldap:client
   gather_facts: no
   roles:
   - dnsclient
