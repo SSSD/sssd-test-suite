@@ -48,3 +48,22 @@
     enabled: yes
     state: restarted
   when: etc_hosts.changed or nm_conf.changed
+
+- name: Remove vagrant DNS A records
+  shell: |
+    echo {{ ipa.password | quote }} | kinit admin
+
+    ipa dnsrecord-show {{ item.zone | quote }} {{ item.name | quote }} |  grep {{ item.ip |  quote }}
+    if [ $? -ne 1 ]; then
+      echo "Record {{ item.ip | quote }} in {{ item.name | quote }}.{{ item.zone | quote }} is not present. Nothing to do."
+      exit 255
+    fi
+    
+    ipa dnsrecord-del {{ item.zone | quote }} {{ item.name | quote }} \
+      --a-rec={{ item.ip | quote }}
+  register: result
+  failed_when: "result.rc != 255 and result.rc != 0"
+  changed_when: "result.rc == 0"
+  with_items:
+  - { zone: '{{ ipa.domain }}', name: 'ipa-ca', ip: '{{ ansible_default_ipv4.address }}'}
+  - { zone: '{{ ipa.domain }}', name: '{{ ipa.hostname }}', ip: '{{ ansible_default_ipv4.address }}'}
