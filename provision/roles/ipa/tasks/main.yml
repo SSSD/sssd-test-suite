@@ -31,10 +31,20 @@
     state: absent
   register: etc_hosts
 
+- name: Create /etc/NetworkManager/conf.d/disable_dns.conf
+  become: True
+  template:
+    src: disable_dns.conf
+    dest: /etc/NetworkManager/conf.d/disable_dns.conf
+    owner: root
+    group: root
+    mode: 0644
+  register: nm_conf
+
 - name: Restart NetworkManager
   become: True
   service:
     name: NetworkManager.service
     enabled: yes
     state: restarted
-  when: etc_hosts.changed
+  when: etc_hosts.changed or nm_conf.changed
