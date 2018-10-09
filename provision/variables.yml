@@ -38,7 +38,8 @@ ad: {
   netbios: 'ADROOT',
   forest_mode: WinThreshold,
   domain_mode: WinThreshold,
-  safe_password: Secret123
+  safe_password: Secret123,
+  suffix: 'dc=ad,dc={{ network.dns_tld }}'
 }
 
 # AD child server configuration
@@ -48,7 +49,8 @@ ad_child: {
   hostname: 'child-dc',
   fqn: 'child-dc.child.{{ ad.domain }}',
   netbios: 'ADCHILD',
-  safe_password: Secret123
+  safe_password: Secret123,
+  suffix: 'dc=child,{{ ad.suffix }}'
 }
 
 # Client configuration
