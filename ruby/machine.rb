@@ -20,9 +20,14 @@ class Machine
     @type = type
     @ip = ip
     @hostname = hostname
+    @memory = memory
+    @box = box
+    @url = url
 
-    @memory = (memory.nil?) ? config.getMemory(name) : memory
-    @box = (box.nil? or box.empty?) ? config.getBox(type, name) : box
-    @url = (url.nil? or url.empty?) ? config.getBoxURL(name) : url
+    if not config.nil?
+      @memory = if memory.nil? then config.getMemory(name) end
+      @box = if box.nil? then config.getBox(type, name) end
+      @url = if url.nil? then config.getBoxURL(name) end
+    end
   end
 end
