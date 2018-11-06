@@ -14,7 +14,6 @@
   win_shell: |
     ldifde -i -f C:\{{ item }}.schema -c dc=X {{ suffix }}
   register: schema
-  success_when: schema.rc != 0 and schema.stdout is search('ENTRY_EXISTS')
   failed_when: schema.rc != 0 and schema.stdout is not search('ENTRY_EXISTS')
   changed_when: schema.rc == 0
   with_items:
