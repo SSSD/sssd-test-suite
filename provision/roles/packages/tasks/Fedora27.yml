@@ -144,9 +144,11 @@
     - python2-pytest
     - python3-pytest
     - python2-ldb
+    - python2-rpm
     - python3-ldb
     - python2-psutil
     - python3-psutil
+    - redhat-lsb-core
   when: inventory_hostname == 'client'
 
 - name: Install debug information for specific packages
