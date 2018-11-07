@@ -14,6 +14,9 @@ class Config
     begin
       @config = JSON.parse(File.read(file))
     rescue Errno::ENOENT => e
+      if ENV.has_key?("SSSD_TEST_SUITE_CONFIG")
+        raise
+      end
       @config = {}
     end
 

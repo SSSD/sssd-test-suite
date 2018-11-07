@@ -6,7 +6,14 @@ require_relative './ruby/guest.rb'
 box_linux = "fedora/28-cloud-base"
 box_ad    = "peru/windows-server-2016-standard-x64-eval"
 
-config = Config.new("config.json", box_linux, box_ad)
+# Get configuration
+project_dir = File.expand_path(File.dirname(__FILE__))
+config_file = sprintf("%s/config.json", project_dir)
+if ENV.has_key?("SSSD_TEST_SUITE_CONFIG")
+  config_file = ENV["SSSD_TEST_SUITE_CONFIG"]
+end
+
+config = Config.new(config_file, box_linux, box_ad)
 
 machines = [
   Machine.new(
