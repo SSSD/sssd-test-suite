@@ -1,6 +1,7 @@
 .project
 .vagrant/
-boxes/
+boxes/*
+!boxes/vagrant-files/
 shared-data/
 !shared-data/README
 shared-enrollment/
