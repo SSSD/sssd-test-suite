@@ -8,7 +8,6 @@
       -Force
   when: inventory_hostname == 'ad'
   register: dns
-  success_when: dns.rc != 0 and dns.stderr is search('ObjectNotFound')
   failed_when: dns.rc != 0 and dns.stderr is not search('ObjectNotFound')
   changed_when: dns.rc == 0
   with_items:
