@@ -11,13 +11,15 @@ end
 
 class Config
   def initialize(file, linux_box, windows_box)
-    begin
-      @config = JSON.parse(File.read(file))
-    rescue Errno::ENOENT => e
-      if ENV.has_key?("SSSD_TEST_SUITE_CONFIG")
-        raise
+    @config = {}
+    if not file.nil?
+      begin
+        @config = JSON.parse(File.read(file))
+      rescue Errno::ENOENT => e
+        if ENV.has_key?("SSSD_TEST_SUITE_CONFIG")
+          raise
+        end
       end
-      @config = {}
     end
 
     @linux_box = linux_box
