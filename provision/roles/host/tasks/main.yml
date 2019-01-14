@@ -16,7 +16,7 @@
     - vagrant
     - vagrant-sshfs
     - vagrant-libvirt
-  
+
 - name: Create /etc/polkit-1/rules.d/00-org.libvirt.unix.manager.rules
   become: True
   template:

@@ -58,7 +58,7 @@
       echo "Record {{ item.ip | quote }} in {{ item.name | quote }}.{{ item.zone | quote }} is not present. Nothing to do."
       exit 255
     fi
-    
+
     ipa dnsrecord-del {{ item.zone | quote }} {{ item.name | quote }} \
       --a-rec={{ item.ip | quote }}
   register: result

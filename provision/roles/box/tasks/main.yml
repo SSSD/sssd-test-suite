@@ -36,13 +36,13 @@
     unset HISTFILE
     [ -f /root/.bash_history ] && rm /root/.bash_history
     [ -f /home/vagrant/.bash_history ] && rm /home/vagrant/.bash_history
-    
+
     # Truncate log files
     find /var/log -type f | while read f; do echo -ne '' > $f; done;
 
     # Zero out unused disk space
     # There is only one partition and no swap
-    count=`df --sync -kP / | tail -n1  | awk -F ' ' '{print $4}'`; 
+    count=`df --sync -kP / | tail -n1  | awk -F ' ' '{print $4}'`;
     let count--
     dd if=/dev/zero of=/tmp/whitespace bs=1024 count=$count;
     rm /tmp/whitespace;

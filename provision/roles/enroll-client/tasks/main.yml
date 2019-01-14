@@ -31,7 +31,7 @@
     dest: '/etc/sssd/ipa.keytab'
     remote_src: yes
   when: client_ipa_installation.changed
-  
+
 - name: Remove /etc/krb5.keytab
   become: True
   file:
@@ -62,7 +62,7 @@
     dest: '/etc/sssd/ad.keytab'
     remote_src: yes
   when: client_ad_installation.changed
-  
+
 - name: Remove /etc/krb5.keytab
   become: True
   file:
@@ -86,7 +86,7 @@
     group: root
     mode: 0600
   register: client_configuration
-    
+
 - name: Create /etc/sudo.conf
   become: True
   template:
@@ -95,7 +95,7 @@
     owner: root
     group: root
     mode: 0644
-    
+
 - name: Restart SSSD
   become: True
   service:

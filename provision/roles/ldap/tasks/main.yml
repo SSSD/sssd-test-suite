@@ -44,7 +44,7 @@
     enabled: yes
     state: restarted
   when: installed.changed
-  
+
 - name: 'Remove all objects but "cn=Directory Administrators"'
   shell: |
     SEARCH=`ldapsearch -x -D '{{ ldap.bind.dn }}' -w {{ ldap.bind.password }} \
