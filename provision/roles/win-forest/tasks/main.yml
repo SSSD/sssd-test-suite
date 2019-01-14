@@ -20,3 +20,9 @@
 - name: Reboot machine
   win_reboot:
   when: installation.changed
+
+- name: Make sure Active Directory Web Services is runnning
+  win_service:
+    name: adws
+    start_mode: auto
+    state: started

@@ -5,11 +5,6 @@
   with_items:
   - sudo
 
-- name: Force replication before installing new schema
-  win_shell: |
-    repadmin /syncall /AdeP
-  ignore_errors: True
-
 - name: Install additional schemas
   win_shell: |
     ldifde -i -f C:\{{ item }}.schema -c dc=X {{ suffix }}

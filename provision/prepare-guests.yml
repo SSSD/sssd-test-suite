@@ -17,8 +17,13 @@
   gather_facts: yes
   roles:
   - win-forest
-  - { role: win-schema, suffix: '{{ ad.suffix }}' }
-  - { role: win-dns, domain: '{{ ad.domain }}', hostname: '{{ ad.hostname }}' }
+  - role: win-schema
+    suffix: '{{ ad.suffix }}'
+  - role: win-dns
+    domain: '{{ ad.domain }}'
+    hostname: '{{ ad.hostname }}'
+  - role: win-users
+    domain: '{{ ad.domain }}'
   vars_files:
   - variables.yml
 
@@ -33,7 +38,11 @@
   gather_facts: yes
   roles:
   - win-domain
-  - { role: win-dns, domain: '{{ ad_child.domain }}', hostname: '{{ ad_child.hostname }}' }
+  - role: win-dns
+    domain: '{{ ad_child.domain }}'
+    hostname: '{{ ad_child.hostname }}'
+  - role: win-users
+    domain: '{{ ad_child.domain }}'
   vars_files:
   - variables.yml
 
@@ -50,5 +59,5 @@
   - ldap
   vars_files:
   - variables.yml
-  
+
 - import_playbook: enroll.yml
