@@ -126,7 +126,7 @@
     - samba4-devel
     - selinux-policy-targeted
     - socket_wrapper
-    - softhsm >= 2.1.0
+    - softhsm
     - sssd
     - sssd-*
     - systemd
