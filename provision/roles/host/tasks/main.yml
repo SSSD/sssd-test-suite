@@ -5,6 +5,9 @@
     name:
     - python2-winrm
     - python3-winrm
+    - python3-clint
+    - python3-requests
+    - python3-requests
     - NetworkManager
     - dnsmasq
     - qemu-kvm

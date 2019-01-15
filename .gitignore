@@ -1,8 +1,14 @@
 .project
+.settings
+.pydevproject
 .vagrant/
 boxes/*
 !boxes/vagrant-files/
+cli/__pycache__/*
+pool
+provision/*.retry
 shared-data/
 !shared-data/README
 shared-enrollment/
 !shared-enrollment/README
+vg-cloud.json
