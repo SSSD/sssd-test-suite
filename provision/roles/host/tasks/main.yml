@@ -25,3 +25,36 @@
     owner: root
     group: root
     mode: 0644
+
+- name: 'Create {{ LIBVIRT_STORAGE }}'
+  become: True
+  file:
+    path: '{{ LIBVIRT_STORAGE }}'
+    state: directory
+    mode: 'a=rwx'
+    owner: '{{ ansible_env.USER }}'
+    group: '{{ ansible_env.USER }}'
+
+- name: 'Create symlink to {{ LIBVIRT_STORAGE }} at ./pool'
+  file:
+    src: '{{ LIBVIRT_STORAGE }}'
+    dest: '{{ playbook_dir }}/../pool'
+    state: link
+
+- name: 'Create libvirt pool at {{ LIBVIRT_STORAGE }}'
+  become: True
+  shell: |
+    virsh pool-dumpxml "sssd-test-suite" | grep "{{ LIBVIRT_STORAGE }}"
+    if [ $? -eq 0 ]; then
+      echo "Pool sssd-test-suite in {{ LIBVIRT_STORAGE }} already exists. Nothing to do."
+      exit 255
+    fi
+
+    virsh pool-destroy sssd-test-suite
+    virsh pool-undefine sssd-test-suite
+    virsh pool-define-as --name sssd-test-suite --type dir --target "{{ LIBVIRT_STORAGE }}"
+    virsh pool-autostart sssd-test-suite
+    virsh pool-start sssd-test-suite
+  register: result
+  failed_when: "result.rc != 255 and result.rc != 0"
+  changed_when: "result.rc == 0"

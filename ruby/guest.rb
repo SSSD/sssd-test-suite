@@ -11,6 +11,7 @@ class Guest
 
       this.vm.provider :libvirt do |libvirt|
         libvirt.memory = machine.memory
+        libvirt.storage_pool_name = "sssd-test-suite"
       end
 
       case machine.type
