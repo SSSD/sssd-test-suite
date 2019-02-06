@@ -1,24 +1,9 @@
-- name: Install packages
-  become: True
-  package:
-    state: present
-    name:
-    - python2-winrm
-    - python3-winrm
-    - python3-clint
-    - python3-requests
-    - python3-requests
-    - NetworkManager
-    - dnsmasq
-    - qemu-kvm
-    - libvirt
-    - libvirt-daemon-kvm
-    - libvirt-devel
-    - ruby-devel
-    - rubygem-ruby-libvirt
-    - vagrant
-    - vagrant-sshfs
-    - vagrant-libvirt
+- name: 'Include distribution specific package tasks [{{ ansible_distribution }} {{ ansible_distribution_major_version }}]'
+  include_tasks: '{{ item }}'
+  with_first_found:
+    - files:
+        - '{{ ansible_distribution }}{{ ansible_distribution_major_version }}.yml'
+        - 'generic.yml'
 
 - name: Create /etc/polkit-1/rules.d/00-org.libvirt.unix.manager.rules
   become: True
@@ -28,6 +13,13 @@
     owner: root
     group: root
     mode: 0644
+
+- name: 'Start libvirt service'
+  become: True
+  service:
+    name: libvirtd.service
+    enabled: yes
+    state: started
 
 - name: 'Create {{ LIBVIRT_STORAGE }}'
   become: True

@@ -1,0 +1,43 @@
+- name: Install packages
+  become: True
+  package:
+    state: present
+    name:
+    - ansible
+    - dnsmasq
+    - libselinux-python
+    - libselinux-python3
+    - libvirt
+    - libvirt-daemon-kvm
+    - libvirt-devel
+    - NetworkManager
+    - python3-dnf
+    - python3-clint
+    - python3-requests
+    - python3-requests-toolbelt
+    - python3-winrm
+    - qemu-kvm
+    - ruby-devel
+    - rubygem-ruby-libvirt
+    - vagrant
+    - vagrant-libvirt
+    - vagrant-sshfs
+
+- name: Install required vagrant plugins
+  shell: |
+    vagrant plugin list | grep -w '{{ plugin }}\s'
+    if [ $? -ne 1 ]; then
+      echo "Plugin {{ plugin }} is already installed. Nothing to do."
+      exit 255
+    fi
+
+    vagrant plugin install {{ plugin }}
+  register: result
+  failed_when: "result.rc != 255 and result.rc != 0"
+  changed_when: "result.rc == 0"
+  loop_control:
+    loop_var: plugin
+  with_items:
+  - winrm
+  - winrm-fs
+  - winrm-elevated
