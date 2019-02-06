@@ -46,10 +46,10 @@ class Guest
   def self.SetWindows(this, config)
     this.vm.guest = :windows
     this.vm.communicator = "winrm"
-    
+
     # Dot means that we will join into default (or empty) domain.
     this.winrm.username = ".\\Administrator"
-    
+
     # Avoid timeouting issues for initial WinRM connection.
     this.winrm.retry_limit = 50
     this.winrm.retry_delay = 10

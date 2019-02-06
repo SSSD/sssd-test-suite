@@ -35,7 +35,7 @@ class Config
 
     return value
   end
-  
+
   def getBox(type, name)
     value = @config.dig("boxes", name, "name")
 
