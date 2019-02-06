@@ -6,7 +6,7 @@ can use to test SSSD.
 
 It creates an out of the box working virtual environment with 389 Directory
 Server, IPA and Active Directory servers. It also creates an SSSD client
-machine enrolled to those servers, ready to build and debug your code. 
+machine enrolled to those servers, ready to build and debug your code.
 
 ## Virtual Environment
 
@@ -30,11 +30,10 @@ machine enrolled to those servers, ready to build and debug your code.
   boxes use fixed machine SID and Active Directory requires different SID
   for each domain controller.
 
-* There are two shared folders between Linux guests and host machine:
+* There is one shared folder between Linux guests and host machine:
   * `./shared-enrollment => /shared/enrollment/` -- enrollment data such
     as certificates and keytabs are stored in this directory.
-  * `./shared-data => /shared/data/` -- custom data to share.
-  
+
 * Additionally, you can mount more folders by defining one or more of these variables:
   * `SSSD_TEST_SUITE_SSHFS` - mount folders with sshfs (recommended)
   * `SSSD_TEST_SUITE_NFS` - mount folders with nfs
@@ -48,7 +47,7 @@ export SSSD_TEST_SUITE_SSHFS=""
 
 SSSD_TEST_SUITE_SSHFS+=" $MY_WORKSPACE:/shared/workspace"
 SSSD_TEST_SUITE_SSHFS+=" $MY_USER_HOME/packages:/shared/packages"
-``` 
+```
 
 * You can also define `SSSD_TEST_SUITE_BASHRC`. If this variable is set
   the file that it points to is automatically sourced from guest `.bashrc`.
@@ -57,7 +56,7 @@ SSSD_TEST_SUITE_SSHFS+=" $MY_USER_HOME/packages:/shared/packages"
 ```
 export SSSD_TEST_SUITE_BASHRC="/shared/workspace/my-scripts/vagrant-bashrc.sh"
 ```
-  
+
 ### User Accounts
 
 | Machine           |        Username         |   Password   |   Description    |
@@ -79,73 +78,74 @@ package tool on other Linux distributions.
 * Approximately `7 GiB` of operating memory
 * Approximately `47 GiB` of disk space
 
-1. Install Ansible
-```bash
-# dnf install -y       \
-    ansible            \
-    libselinux-python  \
-    python-dnf         \
-    python2-winrm      \
-    python3-winrm
-```
+### Running SSSD Test Suite
 
-2. Install latest Vagrant (at least 2.0 is needed) and required plugins
-```bash
-# dnf install -y           \
-    qemu-kvm               \
-    libvirt-daemon-kvm     \
-    libvirt-devel          \
-    ruby-devel             \
-    rubygem-ruby-libvirt   \
-    vagrant                \
-    vagrant-sshfs          \
-    vagrant-libvirt        \
-```
-3. Install winrm plugin for Vagrant
-```bash
-$ vagrant plugin install winrm
-$ vagrant plugin install winrm-fs
-$ vagrant plugin install winrm-elevated
-```
+#### Quick start
 
-### Preparing machines
-
-For the first time setup run `./setup.sh` within the source directory. This script
-will provision your host machine and bring up and provision the guests.
-
-This is a list of changes to your host machine:
-
-1. Install required packages
-2. Configure `dnsmasq` via `NetworkManager` to resolve all machines through DNS names.
-3. Install `polkit` rule for `libvirt` so it does not require `root` password each time `vagrant`
-is used.
+You can use this one-liner as a quick start for the guest machines. It is further explained step
+by step in the following sections.
 
 ```bash
-$ ./setup.sh
+./sssd-test-suite provision-host --pool $pool && ./sssd-test-suite up -s && ./sssd-test-suite provision -e
 ```
 
-**Note:** The provisioning will take a long time (approximately one hour)
-so be patient.
-
-## Usage
-
-Now you are ready to use Vagrant tool to operate on these machines. For example:
+#### 1. Provision host machine
 
 ```bash
-# SSH to IPA server
-vagrant ssh ipa
-
-#  RDP into AD server
-vagrant rdp ad -- -g 1800x960
-
-# Halt Windows machines to save resources
-vagrant halt ad
-vagrant halt ad-child
-
-# Restore Windows machines when needed
-vagrant up ad
-vagrant up ad-child
+$ ./sssd-test-suite provision-host --pool $pool
 ```
+
+This command will perform the following changes on your machine:
+* Install ansible, libvirt, vagrant and other packages required by `sssd-test-suite`.
+* Install required vagrant plugins.
+* Configure NetworkManager's dnsmasq so all machines are resolvable through their DNS names.
+* Install `polkit` rule for `libvirt` that will allow anyone to use `libvirt` without root password.
+* Create libvirt directory pool called `sssd-test-suite` at `$pool`. Make sure there is plenty of disk space left.
+
+#### 2. Provision guest machines
+
+Now it is time to start up the guest machines. It is recommended to use `-s` parameter to start the guests one by one
+due to timeout issues with Windows servers.
+
+```bash
+$ ./sssd-test-suite up -s
+```
+
+#### 3. Provision guest machines
+
+Run the following command to provision guests machines. This step may take a long time (more than one hour) depending
+on you system.
+
+```bash
+$ ./sssd-test-suite provision
+```
+
+#### 4. Enroll client to all domains
+
+When the machines are provisioned you can enroll the client to LDAP, IPA and AD domains.
+
+```bash
+$ ./sssd-test-suite enroll
+```
+
+#### 5. Start working with guests
+
+Finally, you can ssh to Linux machines and run remote desktop on Windows guests.
+
+```bash
+$ ./sssd-test-suite ssh client
+$ ./sssd-test-suite rdp ad -- -g 90%
+```
+
+### Helpful commands
+
+* Check guests status: `./sssd-test-suite status`
+* Bring up guests: `./sssd-test-suite up -s`
+* Destroy guests: `./sssd-test-suite destroy`
+* Update boxes: `./sssd-test-suite update`
+* Remove outdated boxes: `./sssd-test-suite prune`
+
+See `./sssd-test-suite --help` for more commands.
 
 ## Tips
 
@@ -176,6 +176,8 @@ There are some prepared LDIF's at `./provision/ldif`.
 There is a configuration file `config.json` where you can set different boxes
 for different machines. You can also set `sshfs`, `rsync` and `nfs` shared folders
 here in addition to those set by environment variables.
+
+Example configuration files can be found at `./configs` directory.
 
 Example:
 ```json
@@ -208,35 +210,11 @@ Example:
     }
   },
   "folders": {
-    "sshfs": [
-      {
-        "host": "./shared-enrollment",
-        "guest": "/shared/enrollment"
-      }
-    ],
+    "sshfs": [],
     "rsync": [],
     "nfs": []
   }
 }
-```
-
-### Create your own provisioned box
-
-It is possible to create pre-provisioned boxes in order to speed up the first time setup.
-
-1. Run `./setup.sh` without machines enrollment
-```bash
-vagrant destroy
-./setup.sh --skip-tags "enroll-all"
-```
-2. Run `./create_boxes.sh` (see `./create_boxes.sh --help`)
-```bash
-./create_boxes.sh fedora28 http://sssd.ci /home/qemu
-```
-3. Modify `config.json` to use your new boxes
-4. Establish trust between IPA and AD and enroll client to domains
-```bash
-./provision.sh ./provision/enroll.yml
 ```
 
 ### Re-use prepared vagrant boxes
@@ -244,11 +222,6 @@ vagrant destroy
 We have prepared a [sssd-vagrant](https://app.vagrantup.com/sssd-vagrant) group on vagrant
 cloud where we put already provisioned boxes that can be used directly on your machine.
 
-The machines are not currently enrolled to each other so you need to run one of two
-provisioning scripts:
-
-1. `./up.sh && ./provision.sh ./provision/prepare-guests.yml` -- if you need to provision
-one or more machines.
-2. `./up.sh && ./provision.sh ./provision/enroll.yml` -- if all machines are provisioned
-and you only need to establish trust between IPA and AD domains and enroll client into them.
+The machines are not currently enrolled to each other so you need to run
+`./sssd-test-suite up -s && ./sssd-test-suite provision -e`
 
