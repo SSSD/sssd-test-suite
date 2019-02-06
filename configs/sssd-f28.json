@@ -27,12 +27,7 @@
     }
   },
   "folders": {
-    "sshfs": [
-      {
-        "host": "./shared-enrollment",
-        "guest": "/shared/enrollment"
-      }
-    ],
+    "sshfs": [],
     "rsync": [],
     "nfs": []
   }

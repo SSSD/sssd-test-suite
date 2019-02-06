@@ -69,6 +69,11 @@ class Config
     end
 
     folders = {}
+
+    if type == "sshfs"
+      folders["./shared-enrollment"] = "/shared/enrollment"
+    end
+
     value = @config.dig("folders", type)
     if not value.nil?
       value.each do |folder|
