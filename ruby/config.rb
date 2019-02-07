@@ -71,7 +71,7 @@ class Config
     folders = {}
 
     if type == "sshfs"
-      folders["./shared-enrollment"] = "/shared/enrollment"
+      folders[__dir__ + "/../shared-enrollment"] = "/shared/enrollment"
     end
 
     value = @config.dig("folders", type)
