@@ -1,0 +1,11 @@
+- name: 'Packages are the same as in Fedora 29'
+  include_tasks: 'Fedora29.yml'
+
+# Tool dbus-send is required for NetworkManager and it was extracted to
+# new package.
+- name: Install additional packages
+  become: True
+  dnf:
+    state: present
+    name:
+    - dbus-tools
