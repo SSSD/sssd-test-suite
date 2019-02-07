@@ -456,14 +456,14 @@ class CreateBoxCommand(Command):
         self.step(guest, 'Starting guest')
         self.vagrant.run(['up', guest])
         self.step(guest, 'Zeroing empty space')
-        self.ansible.run('prepare-box.yml', guest)
+        self.ansible.run('prepare-box.yml', [guest])
         self.step(guest, 'Halting guest')
         self.vagrant.run(['halt', guest])
         self.step(guest, 'Compressing image')
-        self.shell.run(['mv', box.img, box.backup])
+        self.shell.run(['mv', '-f', box.img, box.backup])
         self.shell.run(['qemu-img', 'convert', '-O', 'qcow2',
                         box.backup, box.img])
-        self.shell.run(['rm', box.backup])
+        self.shell.run(['rm', '-f', box.backup])
 
     def taskCreateBox(self, guest, box, args):
         self.shell.run(['mkdir', '-p', box.outdir])
@@ -472,7 +472,7 @@ class CreateBoxCommand(Command):
             '--vagrantfile=%s' % box.vgfile,
             '--output=%s' % box.file
         ])
-        self.shell.run(['mv', '%s/%s' % (self.dir, box.file), box.path])
+        self.shell.run(['mv', '-f', '%s/%s' % (self.dir, box.file), box.path])
         self.step(guest, 'Box stored as: %s' % box.path)
 
     def taskCreateMetadata(self, guest, box, args):
