@@ -53,6 +53,28 @@ machines = [
   )
 ]
 
+# Print information about environment
+if ARGV[0] == "status"
+  puts ""
+  puts "Current configuration:"
+  puts ""
+  printf("  %-10s (%-15s, %-20s, %-7s) - %s\n",
+         "NAME", "IP ADDRESS", "HOSTNAME", "MEMORY", "BOX NAME")
+  machines.each do |m|
+    hostname = m.hostname
+    case hostname
+    when "root-dc"
+      hostname = "#{m.hostname}.ad.vm"
+    when "child-dc"
+      hostname = "#{m.hostname}.child.ad.vm"
+    end
+    
+    printf("  %-10s (%-15s, %-20s, %-4d MB) - %s\n",
+           m.name, m.ip, hostname, m.memory, m.box)
+  end
+  puts ""
+end
+
 # Create SSSD environment
 Vagrant.configure("2") do |vagrant_config|
   machines.each do |machine|
