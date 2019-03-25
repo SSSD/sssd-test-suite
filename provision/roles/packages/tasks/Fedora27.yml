@@ -140,15 +140,37 @@
   dnf:
     state: present
     name:
+    - clang-analyzer
+    - curl-devel
+    - dbus-python
+    - fakeroot
+    - http-parser-devel
+    - krb5-server
+    - krb5-workstation
+    - lcov
+    - libcmocka-devel
+    - mock
+    - nss_wrapper
+    - openldap-clients
     - openldap-servers
-    - python2-pytest
-    - python3-pytest
+    - pam_wrapper
+    - python2-ldap
     - python2-ldb
-    - python2-rpm
-    - python3-ldb
+    - python2-pep8
     - python2-psutil
+    - python2-pytest
+    - python2-requests
+    - python2-rpm
+    - python3-ldap
+    - python3-ldb
+    - python3-pep8
     - python3-psutil
+    - python3-pytest
+    - python3-requests
     - redhat-lsb-core
+    - rpm-build
+    - uid_wrapper
+    - valgrind
   when: inventory_hostname == 'client'
 
 - name: Install debug information for specific packages
