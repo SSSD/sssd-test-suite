@@ -1,3 +1,8 @@
+- name: Set debuginfo repositories to *-debuginfo
+  set_fact:
+    fedora_repo_debuginfo: '*-debuginfo'
+  when: fedora_repo_debuginfo is undefined
+
 - name: Install common packages
   become: True
   dnf:
@@ -177,7 +182,7 @@
   become: True
   dnf:
     state: present
-    enablerepo: '*-debuginfo'
+    enablerepo: '{{ fedora_repo_debuginfo }}'
     name:
     - authselect-debuginfo
     - authselect-libs-debuginfo

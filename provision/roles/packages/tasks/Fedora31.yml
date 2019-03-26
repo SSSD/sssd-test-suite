@@ -1,2 +1,7 @@
+# There is a problem with fedora-debuginfo repository on rawhide.
+- name: Set debuginfo repositories to rawhide-debuginfo,updates-debugingo 
+  set_fact:
+    fedora_repo_debuginfo: 'rawhide-debuginfo,updates-debuginfo'
+
 - name: 'Packages are the same as in Fedora 30'
   include_tasks: 'Fedora30.yml'
