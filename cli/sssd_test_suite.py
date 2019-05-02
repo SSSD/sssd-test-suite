@@ -618,6 +618,39 @@ class VagrantCloudUploadCommand(VagrantCloudCommand):
 
 
 def main():
+    def print_process_error(err, env={}):
+        def bold(text):
+            return '\033[1m' + text + '\033[0m'
+
+        def red(text):
+            return '\033[31m' + text + '\033[0m'
+
+        def blue(text):
+            return '\033[34m' + text + '\033[0m'
+
+        errormsg = '[sssd-test-suite] The following command exited with %d:'
+        errorcmd = red(bold('[sssd-test-suite] ')) + blue('%s') + bold('%s')
+
+        cmd = ' '.join(err.cmd)
+        if not env:
+            env = ''
+        else:
+            env = ' '.join(
+                '%s=%r' % (key, value) for key, value in env.items()
+            ) + ' '
+
+        print()
+        print(red(bold(errormsg % err.returncode)), file=sys.stderr)
+        print(errorcmd % (env, cmd))
+
+        if err.stdout is not None:
+            print(bold('[sssd-test-suite] command standard output'))
+            print(err.stdout)
+
+        if err.stderr is not None:
+            print(bold('[sssd-test-suite] command error output'))
+            print(err.stderr)
+
     # Split arguments on --
     args = sys.argv[1:]
     params = []
@@ -684,7 +717,11 @@ def main():
         config.set(args.config)
 
     if hasattr(args, 'func'):
-        args.func(args, params)
+        try:
+            args.func(args, params)
+        except ShellProcessError as err:
+            print_process_error(err, err.env)
+            sys.exit(err.returncode)
     else:
         parser.print_help()
 

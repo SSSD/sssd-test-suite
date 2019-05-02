@@ -26,10 +26,18 @@ import argparse
 import subprocess
 from collections import OrderedDict
 
+from subprocess import CalledProcessError
+
 
 class UtilOptions:
     debug = False
     dryrun = False
+
+
+class ShellProcessError(CalledProcessError):
+    def __init__(self, returncode, cmd, env={}, output=None, stderr=None):
+        super().__init__(returncode, cmd,  output, stderr)
+        self.env = env
 
 
 class UniqueAppendConstAction(argparse.Action):
@@ -127,9 +135,18 @@ class Shell:
             )
 
         try:
+            if 'check' not in kwargs:
+                kwargs['check'] = True
+
             result = subprocess.run(args, env=newenv, cwd=self.cwd, **kwargs)
-        except:
-            raise
+        except CalledProcessError as err:
+            raise ShellProcessError(
+                err.returncode,
+                err.cmd,
+                env,
+                err.output,
+                err.stderr
+            ) from None
 
         return result
 
