@@ -41,12 +41,19 @@
     mode: 0644
   register: nm_conf
 
-- name: Restart NetworkManager
+- name: Start NetworkManager
   become: True
   service:
     name: NetworkManager.service
     enabled: yes
-    state: restarted
+    state: started
+
+- name: Reload NetworkManager configuration
+  become: True
+  shell: |
+    nmcli con reload
+  args:
+    warn: False
   when: etc_hosts.changed or nm_conf.changed
 
 - name: Remove vagrant DNS A records

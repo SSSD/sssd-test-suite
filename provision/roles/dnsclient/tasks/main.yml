@@ -17,10 +17,17 @@
     mode: 0644
   register: result
 
-- name: Reload NetworkManager
+- name: Start NetworkManager
   become: True
   service:
     name: NetworkManager.service
     enabled: yes
-    state: reloaded
+    state: started
+
+- name: Reload NetworkManager configuration
+  become: True
+  shell: |
+    nmcli con reload
+  args:
+    warn: False
   when: result.changed
