@@ -18,6 +18,9 @@
     /usr/sbin/ipa-adtrust-install --unattended         \
       --netbios-name={{ ipa.netbios | quote }}         \
       --admin-password={{ ipa.password | quote }}
+    touch /etc/ipa/ipa-adtrust-install-done
+  args:
+    creates: '/etc/ipa/ipa-adtrust-install-done'
   when: ipa_installation is not defined or ipa_installation.changed
 
 - name: 'Setup trust with {{ ad.domain }}'
