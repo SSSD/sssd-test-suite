@@ -2,6 +2,7 @@
 .settings
 .pydevproject
 .vagrant/
+config.json
 boxes/*
 !boxes/vagrant-files/
 cli/__pycache__/*
