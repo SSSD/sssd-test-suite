@@ -4,17 +4,6 @@
     path: '/shared/enrollment/{{ inventory_hostname }}/'
     state: directory
 
-- name: Remove IPA CA trust from previous installation
-  become: True
-  local_action:
-    shell \
-      FILE="{{ playbook_dir }}/../shared-enrollment/ipa/ca.crt"; \
-      [ -f "$FILE" ] && /usr/bin/trust anchor --remove "$FILE" || exit 255
-  register: result
-  when: ipa_installation is defined and ipa_installation.changed
-  failed_when: "result.rc != 255 and result.rc != 0"
-  changed_when: "result.rc == 0"
-
 - name: Copy certificate to shared folder
   become: True
   copy:
@@ -22,13 +11,6 @@
     src: /etc/ipa/ca.crt
     dest: '/shared/enrollment/{{ inventory_hostname }}/'
     remote_src: yes
-  register: ipa_cert
-
-- name: Trust IPA CA
-  become: True
-  local_action:
-    shell /usr/bin/trust anchor "{{ playbook_dir }}/../shared-enrollment/ipa/ca.crt"
-  when: ipa_cert.changed
 
 - name: Install IPA-AD trust
   become: True

@@ -28,3 +28,13 @@
   tags:
   - enroll-all
   - enroll-client
+
+- hosts: localhost
+  gather_facts: no
+  roles:
+  - enroll-local
+  vars_files:
+  - variables.yml
+  tags:
+  - enroll-all
+  - enroll-local

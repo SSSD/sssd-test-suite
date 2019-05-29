@@ -1,0 +1,31 @@
+- name: Install CA certificates to /etc/pki/ca-trust/source/anchors
+  become: True
+  copy:
+    src: '{{ item.ca }}'
+    dest: '/etc/pki/ca-trust/source/anchors/{{ item.name }}'
+    owner: root
+    group: root
+    mode: 0644
+  with_items:
+  - {ca: '{{ playbook_dir }}/../shared-enrollment/ipa/ca.crt', name: 'sssd-test-suite-ipa.crt'}
+  register: ca_result
+
+- name: Create symbolic link to CA bundle
+  become: True
+  file:
+    src: "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem"
+    dest: "/etc/pki/tls/certs/ca-bundle.crt"
+    state: link
+  when: ca_result.changed
+
+- name: Update CA trust
+  become: True
+  shell: |
+    /usr/bin/update-ca-trust
+  when: ca_result.changed
+
+- name: Certificate Authority has changed
+  debug:
+    msg: "Your browser may need to be restarted to reload trusted CA."
+  when: ca_result.changed
+  
