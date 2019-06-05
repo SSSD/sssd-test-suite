@@ -1,0 +1,34 @@
+{
+  "boxes": {
+    "ad": {
+      "name": "peru/windows-server-2019-datacenter-x64-eval",
+      "url": "",
+      "memory": 2048
+    },
+    "ad-child": {
+      "name": "peru/windows-server-2019-datacenter-x64-eval",
+      "url": "",
+      "memory": 2048
+    },
+    "ipa": {
+      "name": "fedora/30-cloud-base",
+      "url": "",
+      "memory": 2048
+    },
+    "ldap": {
+      "name": "fedora/30-cloud-base",
+      "url": "",
+      "memory": 1024
+    },
+    "client": {
+      "name": "fedora/30-cloud-base",
+      "url": "",
+      "memory": 2048
+    }
+  },
+  "folders": {
+    "sshfs": [],
+    "rsync": [],
+    "nfs": []
+  }
+}
