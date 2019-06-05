@@ -58,5 +58,6 @@ client: {
   ip: '{{ network.base_ip }}.30',
   domain: 'client.{{ network.dns_tld }}',
   hostname: 'master',
-  fqn: 'master.client.{{ network.dns_tld }}'
+  fqn: 'master.client.{{ network.dns_tld }}',
+  child_fqn: 'child.client.{{ network.dns_tld }}'
 }

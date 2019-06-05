@@ -1,0 +1,8 @@
+- name: Cleanup after join
+  become: True
+  file:
+    path: '{{ item }}'
+    state: absent
+  with_items:
+  - /etc/krb5.keytab
+  - /etc/sssd/sssd.conf
