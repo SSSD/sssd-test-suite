@@ -5,7 +5,6 @@
 config.json
 boxes/*
 !boxes/vagrant-files/
-cli/__pycache__/*
 pool
 provision/*.retry
 shared-data/
@@ -13,3 +12,5 @@ shared-data/
 shared-enrollment/
 !shared-enrollment/README
 vg-cloud.json
+__pycache__/
+*.py[cod]

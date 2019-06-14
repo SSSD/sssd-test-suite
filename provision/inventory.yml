@@ -24,13 +24,13 @@ all:
       hosts:
         ipa:
           ansible_host: 192.168.100.10
-          ansible_ssh_private_key_file: ./.vagrant/machines/ipa/libvirt/private_key
+          ansible_ssh_private_key_file: '{{ inventory_dir }}/../.vagrant/machines/ipa/libvirt/private_key'
         ldap:
           ansible_host: 192.168.100.20
-          ansible_ssh_private_key_file: ./.vagrant/machines/ldap/libvirt/private_key
+          ansible_ssh_private_key_file: '{{ inventory_dir }}/../.vagrant/machines/ldap/libvirt/private_key'
         client:
           ansible_host: 192.168.100.30
-          ansible_ssh_private_key_file: ./.vagrant/machines/client/libvirt/private_key
+          ansible_ssh_private_key_file: '{{ inventory_dir }}/../.vagrant/machines/client/libvirt/private_key'
       vars:
         ansible_port: 22
         ansible_user: vagrant

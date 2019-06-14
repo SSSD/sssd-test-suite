@@ -5,6 +5,15 @@
         - '{{ ansible_distribution }}{{ ansible_distribution_major_version }}.yml'
         - 'generic.yml'
 
+- name: Create bash comletion script for the cli
+  become: True
+  template:
+    src: argcomplete
+    dest: /etc/bash_completion.d/sssd-test-suite
+    owner: root
+    group: root
+    mode: 0644
+
 - name: Create /etc/polkit-1/rules.d/00-org.libvirt.unix.manager.rules
   become: True
   template:
