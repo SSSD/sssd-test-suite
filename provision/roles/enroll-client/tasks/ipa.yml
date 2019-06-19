@@ -1,0 +1,29 @@
+- name: Join IPA domain
+  become: True
+  shell: |
+    /usr/sbin/ipa-client-install --unattended          \
+      --domain {{ ipa.domain | quote }}                \
+      --principal admin                                \
+      --password {{ ipa.password | quote }}            \
+      --force-ntpd
+  register: client_ipa_installation
+  args:
+    creates: /etc/ipa/ca.crt
+
+- name: Copy IPA keytab to local folder
+  become: True
+  copy:
+    src: /etc/krb5.keytab
+    dest: '/etc/sssd/ipa.keytab'
+    remote_src: yes
+  when: client_ipa_installation.changed
+
+- name: Copy IPA keytab to shared folder
+  become: True
+  copy:
+    force: True
+    src: /etc/sssd/ipa.keytab
+    dest: '/shared/enrollment/{{ inventory_hostname }}/ipa.keytab'
+    remote_src: yes
+
+- include_tasks: 'cleanup.yml'

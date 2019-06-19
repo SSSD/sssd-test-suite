@@ -4,95 +4,20 @@
     path: '/shared/enrollment/{{ inventory_hostname }}/'
     state: directory
 
-# KCM needs to be enabled in order to join to Active Directory domain
-- name: Start SSSD KCM socket
-  become: True
-  service:
-    name: sssd-kcm.socket
-    enabled: yes
-    state: started
+- include_tasks: 'ipa.yml'
+  tags:
+  - enroll-all
+  - enroll-ipa
 
-- name: Join IPA domain
-  become: True
-  shell: |
-    /usr/sbin/ipa-client-install --unattended          \
-      --domain {{ ipa.domain | quote }}                \
-      --principal admin                                \
-      --password {{ ipa.password | quote }}            \
-      --force-ntpd
-  register: client_ipa_installation
-  args:
-    creates: /etc/ipa/ca.crt
+- include_tasks: 'ad.yml'
+  tags:
+  - enroll-all
+  - enroll-ad
 
-- name: Copy IPA keytab to local folder
-  become: True
-  copy:
-    src: /etc/krb5.keytab
-    dest: '/etc/sssd/ipa.keytab'
-    remote_src: yes
-  when: client_ipa_installation.changed
-
-- include_tasks: 'cleanup.yml'
-
-- name: Copy IPA keytab to shared folder
-  become: True
-  copy:
-    force: True
-    src: /etc/sssd/ipa.keytab
-    dest: '/shared/enrollment/{{ inventory_hostname }}/ipa.keytab'
-    remote_src: yes
-
-- name: Join to Active Directory domain
-  become: True
-  shell: |
-    echo vagrant | realm join {{ ad.domain | quote }} || exit $?
-    touch /etc/sssd/ad_enrolled || exit $?
-  register: client_ad_installation
-  args:
-    creates: /etc/sssd/ad_enrolled
-
-- name: Copy AD keytab to local folder
-  become: True
-  copy:
-    src: /etc/krb5.keytab
-    dest: '/etc/sssd/ad.keytab'
-    remote_src: yes
-  when: client_ad_installation.changed
-
-- include_tasks: 'cleanup.yml'
-
-- name: Join to Active Directory Child domain
-  become: True
-  shell: |
-    current_hostname=`hostname`
-    hostname '{{ client.child_fqn }}' || exit $?
-    echo vagrant | realm join {{ ad_child.domain | quote }} || exit $?
-    hostname $current_hostname || exit $?
-    touch /etc/sssd/ad_child_enrolled || exit $?
-  register: client_ad_child_installation
-  args:
-    creates: /etc/sssd/ad_child_enrolled
-
-- name: Copy AD Child keytab to local folder
-  become: True
-  copy:
-    src: /etc/krb5.keytab
-    dest: '/etc/sssd/ad-child.keytab'
-    remote_src: yes
-  when: client_ad_child_installation.changed
-
-- include_tasks: 'cleanup.yml'
-
-- name: Copy AD and AD child keytab to shared folder
-  become: True
-  copy:
-    force: True
-    src: '/etc/sssd/{{ item }}'
-    dest: '/shared/enrollment/{{ inventory_hostname }}/{{ item }}'
-    remote_src: yes
-  with_items:
-  - ad.keytab
-  - ad-child.keytab
+- include_tasks: 'ad-child.yml'
+  tags:
+  - enroll-all
+  - enroll-ad-child
 
 - name: Create /etc/sssd/sssd.conf
   become: True

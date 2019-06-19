@@ -28,4 +28,3 @@
   debug:
     msg: "Your browser may need to be restarted to reload trusted CA."
   when: ca_result.changed
-  

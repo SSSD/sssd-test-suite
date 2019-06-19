@@ -1,0 +1,36 @@
+- name: Start SSSD KCM socket
+  become: True
+  service:
+    name: sssd-kcm.socket
+    enabled: yes
+    state: started
+
+- name: Join to Active Directory Child domain
+  become: True
+  shell: |
+    current_hostname=`hostname`
+    hostname '{{ client.child_fqn }}' || exit $?
+    echo vagrant | realm join {{ ad_child.domain | quote }} || exit $?
+    hostname $current_hostname || exit $?
+    touch /etc/sssd/ad_child_enrolled || exit $?
+  register: client_ad_child_installation
+  args:
+    creates: /etc/sssd/ad_child_enrolled
+
+- name: Copy AD Child keytab to local folder
+  become: True
+  copy:
+    src: /etc/krb5.keytab
+    dest: '/etc/sssd/ad-child.keytab'
+    remote_src: yes
+  when: client_ad_child_installation.changed
+
+- name: Copy AD child keytab to shared folder
+  become: True
+  copy:
+    force: True
+    src: '/etc/sssd/ad-child.keytab'
+    dest: '/shared/enrollment/{{ inventory_hostname }}/ad-child.keytab'
+    remote_src: yes
+
+- include_tasks: 'cleanup.yml'

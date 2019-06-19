@@ -1,0 +1,33 @@
+- name: Start SSSD KCM socket
+  become: True
+  service:
+    name: sssd-kcm.socket
+    enabled: yes
+    state: started
+
+- name: Join to Active Directory domain
+  become: True
+  shell: |
+    echo vagrant | realm join {{ ad.domain | quote }} || exit $?
+    touch /etc/sssd/ad_enrolled || exit $?
+  register: client_ad_installation
+  args:
+    creates: /etc/sssd/ad_enrolled
+
+- name: Copy AD keytab to local folder
+  become: True
+  copy:
+    src: /etc/krb5.keytab
+    dest: '/etc/sssd/ad.keytab'
+    remote_src: yes
+  when: client_ad_installation.changed
+
+- name: Copy AD keytab to shared folder
+  become: True
+  copy:
+    force: True
+    src: '/etc/sssd/ad.keytab'
+    dest: '/shared/enrollment/{{ inventory_hostname }}/ad.keytab'
+    remote_src: yes
+
+- include_tasks: 'cleanup.yml'

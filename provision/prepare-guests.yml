@@ -59,5 +59,3 @@
   - ldap
   vars_files:
   - variables.yml
-
-- import_playbook: enroll.yml
