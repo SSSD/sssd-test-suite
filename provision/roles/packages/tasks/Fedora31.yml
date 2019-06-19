@@ -1,5 +1,5 @@
 # There is a problem with fedora-debuginfo repository on rawhide.
-- name: Set debuginfo repositories to rawhide-debuginfo,updates-debugingo 
+- name: Set debuginfo repositories to rawhide-debuginfo,updates-debugingo
   set_fact:
     fedora_repo_debuginfo: 'rawhide-debuginfo,updates-debuginfo'
 
