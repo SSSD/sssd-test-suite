@@ -12,7 +12,7 @@ class Guest
       this.vm.provider :libvirt do |libvirt|
         libvirt.memory = machine.memory
         libvirt.storage_pool_name = "sssd-test-suite"
-        
+
         # Creating new private networks requires system connection.
         if defined?(libvirt.qemu_use_session)
           libvirt.qemu_use_session = false

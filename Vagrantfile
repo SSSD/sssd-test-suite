@@ -2,10 +2,6 @@ require_relative './ruby/config.rb'
 require_relative './ruby/machine.rb'
 require_relative './ruby/guest.rb'
 
-# Default boxes
-box_linux = "fedora/28-cloud-base"
-box_ad    = "peru/windows-server-2016-standard-x64-eval"
-
 # Get configuration
 project_dir = File.expand_path(File.dirname(__FILE__))
 config_file = sprintf("%s/config.json", project_dir)
@@ -13,7 +9,7 @@ if ENV.has_key?("SSSD_TEST_SUITE_CONFIG")
   config_file = ENV["SSSD_TEST_SUITE_CONFIG"]
 end
 
-config = Config.new(config_file, box_linux, box_ad)
+config = Config.new(config_file)
 
 machines = [
   Machine.new(
@@ -69,8 +65,13 @@ if ARGV[0] == "status"
       hostname = "#{m.hostname}.child.ad.vm"
     end
     
+    box = m.box
+    if box.nil? or box.empty?
+      box = "(disabled)"
+    end
+    
     printf("  %-10s (%-15s, %-20s, %-4d MB) - %s\n",
-           m.name, m.ip, hostname, m.memory, m.box)
+           m.name, m.ip, hostname, m.memory, box)
   end
   puts ""
 end

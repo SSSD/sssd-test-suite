@@ -10,7 +10,7 @@ class Hash
 end
 
 class Config
-  def initialize(file, linux_box, windows_box)
+  def initialize(file)
     @config = {}
     if not file.nil?
       begin
@@ -21,9 +21,6 @@ class Config
         end
       end
     end
-
-    @linux_box = linux_box
-    @windows_box = windows_box
   end
 
   def getMemory(name)
@@ -40,12 +37,7 @@ class Config
     value = @config.dig("boxes", name, "name")
 
     if value.nil? or value.empty?
-      case type
-      when Machine::LINUX
-        value = @linux_box
-      when Machine::WINDOWS
-        value = @windows_box
-      end
+      return nil
     end
 
     return value
