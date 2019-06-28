@@ -5,23 +5,26 @@
     name:
     - ansible
     - dnsmasq
+    - gcc
+    - libguestfs-tools-c
     - libselinux-python
     - libselinux-python3
     - libvirt
     - libvirt-daemon-kvm
     - libvirt-devel
+    - libxml2-devel
+    - libxslt-devel
     - NetworkManager
-    - python3-dnf
     - python3-clint
+    - python3-dnf
     - python3-requests
     - python3-requests-toolbelt
     - python3-winrm
     - qemu-kvm
     - ruby-devel
+    - rubygem-nokogiri
     - rubygem-ruby-libvirt
     - vagrant
-    - vagrant-libvirt
-    - vagrant-sshfs
 
 - name: Install required vagrant plugins
   shell: |
@@ -41,3 +44,5 @@
   - winrm
   - winrm-fs
   - winrm-elevated
+  - vagrant-libvirt
+  - vagrant-sshfs
