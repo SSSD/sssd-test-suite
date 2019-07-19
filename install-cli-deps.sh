@@ -8,7 +8,7 @@ read -r -d '' packages <<- EOM
     python3-argcomplete
     python3-colorama
     python3-clint
-    python3-pyyaml
+    python3-PyYAML
     python3-requests
     python3-requests-toolbelt
 EOM
@@ -19,4 +19,3 @@ for package in $packages; do
 done
 
 sudo dnf install $@ $deps
-    
