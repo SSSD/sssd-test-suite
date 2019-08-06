@@ -59,6 +59,11 @@ class RunTestsActor(TestSuiteActor):
             '-t', '--test-config', action='store', type=str, dest='test_config',
             help='Path to test suite yaml configuration.'
         )
+        
+        parser.add_argument(
+            '--do-not-destroy', action='store_false', dest='destroy',
+            help='Do not destroy existing machines.'
+        )
 
         parser.epilog = textwrap.dedent('''
         This command will execute tests described in yaml configuration file.
@@ -139,16 +144,25 @@ class RunTestsActor(TestSuiteActor):
         default_guest = 'client' if 'client' in guests else guests[0]
         timeout = case.get('timeout', None)
 
-        tasks = self.tasklist('Test Case: {}'.format(case['name']), [
-            Task(
+        tasks = self.tasklist('Test Case: {}'.format(case['name']))
+        
+        if args.destroy:
+            tasks.add(
                 'Destroying guests: {}'.format(guests), self.task_destroy,
                 args.config, guests
-            ),
-            Task(
-                'Starting up guests: {}'.format(guests), self.task_up,
-                args.config, guests, command_directory, args.sssd, args.artifacts
             )
-        ])
+        else:
+            # Guests needs to be restarted in order to mount directories.
+            tasks.add(
+                'Halting guests: {}'.format(guests), self.task_halt,
+                args.config, guests,
+                run_on_error=True
+            )
+
+        tasks.add(
+            'Starting up guests: {}'.format(guests), self.task_up,
+            args.config, guests, command_directory, args.sssd, args.artifacts
+        )
 
         for step in case.get('tasks', []):
             tasks.add(
