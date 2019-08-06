@@ -234,7 +234,7 @@ class RunTestsActor(TestSuiteActor):
         self.call(VagrantCommandActor('box update'), config=config, sequence=False, guests=list(machines))
 
     def task_prune(self, task, config):
-        self.call(PruneBoxActor, config=config)
+        self.call(PruneBoxActor, config=config, force=True)
 
     def task_destroy(self, task, config, guests):
         self.call(VagrantDestroyActor, config=config, sequence=False, guests=guests)

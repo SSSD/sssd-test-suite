@@ -267,13 +267,20 @@ class CreateBoxActor(TestSuiteActor):
 
 
 class PruneBoxActor(TestSuiteActor):
+    def setup_parser(self, parser):
+        parser.add_argument(
+            '-f', '--force', action='store_true', dest='force',
+            help='Destroy without confirmation even when box is in use'
+        )
+
     def run(self, args):
         regex = re.compile(
             r"^[^']+'([^']+)' \(v([^)]+)\).*$",
             re.MULTILINE
         )
-
-        result = self.vagrant(args.config, 'box prune', stdout=subprocess.PIPE)
+        
+        vgargs = ['--force'] if args.force else []
+        result = self.vagrant(args.config, 'box prune', args=vgargs, stdout=subprocess.PIPE)
         for (box, version) in regex.findall(result.stdout.decode('utf-8')):
             volume = '{box}_vagrant_box_image_{version}.img'.format(
                 box=box.replace('/', '-VAGRANTSLASH-'),
