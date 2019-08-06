@@ -3,6 +3,7 @@
   selinux:
     policy: targeted
     state: permissive
+  when: selinux_enabled 
 
 - name: Add .bashrc for user
   become: True

@@ -1,3 +1,7 @@
+- name: SELinux is enabled in Fedora
+  set_fact:
+    selinux_enabled: true
+
 # There is a problem with fedora-debuginfo repository on rawhide.
 - name: Set debuginfo repositories to rawhide-debuginfo,updates-debugingo
   set_fact:

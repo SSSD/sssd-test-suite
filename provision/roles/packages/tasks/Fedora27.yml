@@ -1,3 +1,7 @@
+- name: SELinux is enabled in Fedora
+  set_fact:
+    selinux_enabled: true
+
 - name: Set debuginfo repositories to *-debuginfo
   set_fact:
     fedora_repo_debuginfo: '*-debuginfo'
