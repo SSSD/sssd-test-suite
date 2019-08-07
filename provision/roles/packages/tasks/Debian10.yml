@@ -1,0 +1,128 @@
+- name: SELinux is disabled in Debian
+  set_fact:
+    selinux_enabled: false
+
+- name: Install common packages
+  become: True
+  apt:
+    state: present
+    name:
+    - bash-completion
+    - dnsmasq
+    - gdb
+    - git
+    - ldb-tools
+    - python3-selinux
+    - network-manager
+    - ldap-utils
+    - screen
+    - systemtap
+    - tig
+    - tmate
+    - tmux
+    - valgrind
+    - vim
+    - wget
+
+- name: IPA server is not supported on Debian
+  fail:
+    msg: IPA server is not packaged on Debian. Use other distribution.
+  when: inventory_hostname == 'ipa'
+
+- name: LDAP server is not supported on Debian
+  fail:
+    msg: We are not interested in LDAP server on Debian. Use other distribution.
+  when: inventory_hostname == 'ldap'
+
+- name: Install Client specific packages
+  become: True
+  apt:
+    state: present
+    name:
+    - adcli
+    - autoconf
+    - automake
+    - autopoint
+    - bind9utils
+    - check
+    - cifs-utils
+    - clang
+    - dbus
+    - dh-apparmor
+    - dnsutils
+    - docbook-xml
+    - docbook-xsl
+    - fakeroot
+    - freeipa-client
+    - gettext
+    - gnutls-bin
+    - krb5-admin-server
+    - krb5-config
+    - krb5-kdc
+    - krb5-user
+    - lcov
+    - ldap-utils
+    - libc-ares-dev
+    - libcmocka-dev
+    - libcollection-dev
+    - libcurl4-openssl-dev
+    - libdbus-1-dev
+    - libdhash-dev
+    - libglib2.0-dev
+    - libhttp-parser-dev
+    - libini-config-dev
+    - libjansson-dev
+    - libkeyutils-dev
+    - libkrb5-dev
+    - libldap2-dev
+    - libldb-dev
+    - libltdl-dev
+    - libnfsidmap-dev
+    - libnl-3-dev
+    - libnl-route-3-dev
+    - libnspr4-dev
+    - libnss-wrapper
+    - libnss3-dev
+    - libp11-kit-dev
+    - libpam-wrapper
+    - libpam0g-dev
+    - libpcre3-dev
+    - libpopt-dev
+    - libsasl2-dev
+    - libselinux1-dev
+    - libsemanage1-dev
+    - libsmbclient-dev
+    - libssl-dev
+    - libssl-dev
+    - libsystemd-dev
+    - libtalloc-dev
+    - libtdb-dev
+    - libtevent-dev
+    - libtool
+    - libtool-bin
+    - libuid-wrapper
+    - libxml2-utils
+    - make
+    - packagekit
+    - pep8
+    - python-dbus
+    - python-dev
+    - python-ldap
+    - python-ldb
+    - python-psutil
+    - python-pytest
+    - python-requests
+    - python3-dev
+    - realmd
+    - samba-dev
+    - slapd
+    - softhsm2
+    - sssd
+    - sssd-*
+    - systemd
+    - systemtap-sdt-dev
+    - uuid-dev
+    - valgrind
+    - xml-core
+    - xsltproc
+  when: inventory_hostname == 'client'
