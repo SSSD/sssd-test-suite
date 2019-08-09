@@ -81,3 +81,37 @@ cn: allow_all
 sudoHost: ALL
 sudoCommand: ALL
 sudoUser: ALL
+
+dn: ou=autofs,dc=ldap,dc=vm
+objectClass: top
+objectClass: organizationalUnit
+ou: autofs
+
+dn: ou=auto.master,ou=autofs,dc=ldap,dc=vm
+objectClass: top
+objectClass: automountMap
+ou: auto.master
+
+dn: cn=/home,ou=auto.master,ou=autofs,dc=ldap,dc=vm
+objectClass: top
+objectClass: automount
+automountInformation: auto.home
+cn: /home
+
+dn: ou=auto.home,ou=autofs,dc=ldap,dc=vm
+objectClass: top
+objectClass: automountMap
+ou: auto.home
+
+dn: cn=/home1,ou=auto.home,ou=autofs,dc=ldap,dc=vm
+objectClass: top
+objectClass: automount
+automountInformation: home1
+cn: /home1
+
+dn: cn=/home2,ou=auto.home,ou=autofs,dc=ldap,dc=vm
+objectClass: top
+objectClass: automount
+automountInformation: home2
+cn: /home2
+
