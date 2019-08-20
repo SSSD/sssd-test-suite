@@ -3,7 +3,6 @@
   roles:
   - packages
   - common
-  - reboot
   vars_files:
   - variables.yml
 
