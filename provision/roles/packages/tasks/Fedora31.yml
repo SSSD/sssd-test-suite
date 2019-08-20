@@ -178,13 +178,14 @@
     - python2-ldap
     - python2-ldb
     - python2-psutil
+    - python2-pycodestyle
     - python2-pytest
     - python2-requests
     - python2-rpm
     - python3-ldap
     - python3-ldb
-    - python3-pep8
     - python3-psutil
+    - python3-pycodestyle
     - python3-pytest
     - python3-requests
     - redhat-lsb-core
