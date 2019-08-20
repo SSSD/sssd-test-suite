@@ -1,0 +1,2 @@
+- name: 'Packages are the same as in Fedora 31'
+  include_tasks: 'Fedora31.yml'
