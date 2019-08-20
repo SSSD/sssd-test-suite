@@ -74,3 +74,64 @@
   with_items:
   - { zone: '{{ ipa.domain }}', name: 'ipa-ca', ip: '{{ ansible_default_ipv4.address }}'}
   - { zone: '{{ ipa.domain }}', name: '{{ ipa.hostname }}', ip: '{{ ansible_default_ipv4.address }}'}
+
+- name: Create pw-never-expires group
+  shell: |
+    echo {{ ipa.password | quote }} | kinit admin
+
+    ipa group-show pw-never-expires
+    if [ $? -eq 0 ]; then
+      echo "Group already exist. Nothing to do."
+      exit 255
+    fi
+
+    ipa group-add pw-never-expires
+  register: result
+  failed_when: "result.rc != 255 and result.rc != 0"
+  changed_when: "result.rc == 0"
+
+- name: Create pw-never-expires password policy
+  shell: |
+    echo {{ ipa.password | quote }} | kinit admin
+
+    ipa pwpolicy-show pw-never-expires
+    if [ $? -eq 0 ]; then
+      echo "Policy already exist. Nothing to do."
+      exit 255
+    fi
+
+    ipa pwpolicy-add pw-never-expires --maxlife=0 --minlife=0 --priority=0
+  register: result
+  failed_when: "result.rc != 255 and result.rc != 0"
+  changed_when: "result.rc == 0"
+
+- name: Add admin to pw-never-expires group
+  shell: |
+    echo {{ ipa.password | quote }} | kinit admin
+
+    ipa user-show admin | grep pw-never-expires
+    if [ $? -eq 0 ]; then
+      echo "Admin is already member of the group. Nothing to do."
+      exit 255
+    fi
+
+    ipa group-add-member pw-never-expires --users=admin
+  register: groupresult
+  failed_when: "groupresult.rc != 255 and groupresult.rc != 0"
+  changed_when: "groupresult.rc == 0"
+
+- name: Reset admin password to apply pw-never-expires policy
+  shell: |
+    echo {{ ipa.password | quote }} | kinit admin
+
+    ipa user-show admin | grep "User password expiration"
+    if [ $? -ne 1 ]; then
+      echo "Policy is already applied. Nothing to do."
+      exit 255
+    fi
+
+    echo {{ ipa.password | quote }} | ipa user-mod admin --password
+  register: result
+  failed_when: "result.rc != 255 and result.rc != 0"
+  changed_when: "result.rc == 0"
+  when: groupresult.changed
