@@ -34,6 +34,7 @@ class Task(object):
         self.args = args
         self.kwargs = kwargs
         self.run_on_error = kwargs.pop('run_on_error', False)
+        self.ignore_error = kwargs.pop('ignore_error', False)
 
     def run(self, tasklist):
         self.tasklist = tasklist
@@ -77,28 +78,52 @@ class TaskList(object):
             kwargs['file'] = sys.stderr
 
         self.message(message, **kwargs)
+    
+    def _print_task_info(self, idx, total, task, error):
+        if not error:
+            self.message('[{}/{}] {}'.format(idx, total, task.name))
+            return
+        
+        if task.run_on_error:
+            self.message('[{}/{}] {} (finalizing)'.format(idx, total, task.name))
+            return
+        
+        self.message('[{}/{}] {} (skipped on error)'.format(idx, total, task.name))
+    
+    def _print_error_info(self, idx, total, task, error):
+        task.step('{c-r}{cls}{s-r}: {message}'.format(
+            cls=error.__class__.__name__,
+            message=str(error),
+            **format_colors()
+        ), 'ERROR' if not task.ignore_error else 'IGNORING ERROR')
 
     def _run_task_list(self):
         total = len(self.tasks)
         start = datetime.datetime.now()
-        try:
-            for idx, task in enumerate(self.tasks, start=1):
-                self.message('[{}/{}] {}'.format(idx, total, task.name))
+        
+        error = None
+        for idx, task in enumerate(self.tasks, start=1):
+            self._print_task_info(idx, total, task, error)
+            if error and not task.run_on_error:
+                continue
+
+            try:
                 task.run(self)
-        except Exception as e:
-            for idx, task in enumerate(self.tasks[idx:], start=idx+1):
-                if not task.run_on_error:
-                    self.message('[{}/{}] {} (skipped on error)'.format(idx, total, task.name))
+            except Exception as e:
+                self._print_error_info(idx, total, task, e)
+                if task.ignore_error:
                     continue
 
-                self.message('[{}/{}] {} (finalizing)'.format(idx, total, task.name))
-                task.run(self)
+                if not error:                
+                    error = e
+                continue
 
+        if error:
             self.message('Finished with error {c-r}{cls}{s-r}: {message}'.format(
-                cls=e.__class__.__name__,
-                message=str(e),
+                cls=error.__class__.__name__,
+                message=str(error),
                 **format_colors()))
-            raise
+            raise error
 
         end = datetime.datetime.now()
 
