@@ -27,7 +27,7 @@ import textwrap
 
 
 from commands.provision import ProvisionGuestsActor
-from commands.vagrant import VagrantCommandActor
+from commands.vagrant import VagrantCommandActor, VagrantDestroyActor
 from lib.actions import UniqueAppendAction
 from lib.command import Command, CommandParser
 from lib.shell import Shell
@@ -161,7 +161,7 @@ class CreateBoxActor(TestSuiteActor):
         tasks.run()
 
     def destroy(self, task, args):
-        self.call(VagrantCommandActor('destroy'), args)
+        self.call(VagrantDestroyActor, args)
 
     def update(self, task, args):
         self.call(VagrantCommandActor('box update'), args)
