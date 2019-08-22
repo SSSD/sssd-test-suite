@@ -237,9 +237,33 @@ class LdapActor(TestSuiteActor):
         '''.format(ldif=ldif))
 
 
+class RearmWindowsActor(TestSuiteActor):
+    def setup_parser(self, parser):
+        parser.add_argument(
+            'guests', nargs='*',
+            choices=['all'] + self.WindowsGuests,
+            action=UniqueAppendAction,
+            default='all',
+            help='Guests that the client should enroll to. '
+                 'Multiple guests can be set. (Default "all")'
+        )
+
+        parser.epilog = textwrap.dedent('''
+        This will renew the Windows evaluation license when it is expired. It
+        will trigger guest reboot after the renewal.
+
+        The renewal can be done only 6 times.
+        ''')
+
+    def run(self, args, argv):
+        guests = args.guests if 'all' not in args.guests else ['all']
+        self.ansible('rearm-windows-license.yml', True, limit=guests, argv=argv)
+
+
 Commands = Command('provision', 'Provision machines', CommandParser([
     Command('host', 'Provision host machine', ProvisionHostActor),
     Command('guest', 'Provision selected guests machines', ProvisionGuestsActor),
     Command('enroll', 'Setup trusts and enroll client to domains', EnrollActor),
     Command('ldap', 'Import ldif into ldap server', LdapActor),
+    Command('rearm', 'Renew windows license', RearmWindowsActor),
 ]))

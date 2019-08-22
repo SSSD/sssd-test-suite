@@ -1,0 +1,7 @@
+---
+- hosts: ad:ad-child
+  gather_facts: no
+  roles:
+  - win-rearm
+  vars_files:
+  - variables.yml

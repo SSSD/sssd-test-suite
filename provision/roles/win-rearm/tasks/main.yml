@@ -1,0 +1,29 @@
+- name: Get license status
+  win_shell: cscript slmgr.vbs -dlv
+  args:
+    chdir: C:\Windows\System32\
+  register: dlv_result
+
+- name: Set license facts
+  set_fact:
+    LICENSE_EXPIRED: dlv_result.stdout is search("License Status{{':'}} Notification")
+    REARM_LEFT: "{{ dlv_result.stdout | regex_search('Remaining Windows rearm count: (\\d+)', '\\1') }}"
+
+- name: License status
+  debug:
+    msg: "{% if LICENSE_EXPIRED %}Expired{% else %}Valid{% endif %}"
+
+- name: Remaining license rearms
+  debug:
+    var: REARM_LEFT
+
+- name: Renew Windows license
+  win_shell: cscript slmgr.vbs -rearm
+  args:
+    chdir: C:\Windows\System32\
+  register: rearm_result
+  when: LICENSE_EXPIRED
+
+- name: Reboot machine
+  win_reboot:
+  when: rearm_result.changed
