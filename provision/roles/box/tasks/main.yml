@@ -1,9 +1,3 @@
-- name: Upgrade all packages to their latest version
-  become: True
-  package:
-    name: '*'
-    state: latest
-
 - name: Clean package manager data (dnf)
   become: True
   shell: |
