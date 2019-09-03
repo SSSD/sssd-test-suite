@@ -1,0 +1,9 @@
+[Unit]
+Description=Create SSH Host Keys if not present
+Before=sshd.service
+
+[Service]
+ExecStart=/usr/bin/bash -c "[ ! -f /etc/ssh/ssh_host_rsa_key ] && ssh-keygen -A || :"
+
+[Install]
+WantedBy=multi-user.target

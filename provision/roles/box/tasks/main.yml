@@ -23,6 +23,24 @@
     group: vagrant
     mode: 0600
 
+# Repackaging Debian box removes SSH host keys. This is a work around.
+# https://bugzilla.redhat.com/show_bug.cgi?id=1748821
+- name: Install service to regenerate SSH host keys if needed
+  become: True
+  copy:
+    src: sshd-host-key.service
+    dest: /etc/systemd/system/sshd-host-key.service
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Enable sshd-host-key.service
+  become: True
+  service:
+    name: sshd-host-key.service
+    enabled: yes
+    state: started
+
 - name: Zero out disk space
   become: True
   shell: |
