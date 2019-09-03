@@ -1,3 +1,11 @@
+- name: List directory
+  become: True
+  shell: ls -l /etc/ssh
+  register: ls
+
+- debug:
+    var: ls.stdout
+
 - name: Clean package manager data (dnf)
   become: True
   shell: |
@@ -15,6 +23,14 @@
     warn: False
   when: ansible_pkg_mgr == 'apt'
 
+- name: List directory
+  become: True
+  shell: ls -l /etc/ssh
+  register: ls
+
+- debug:
+    var: ls.stdout
+
 - name: Install vagrant certificate
   copy:
     src: authorized_keys
@@ -22,6 +38,14 @@
     owner: vagrant
     group: vagrant
     mode: 0600
+
+- name: List directory
+  become: True
+  shell: ls -l /etc/ssh
+  register: ls
+
+- debug:
+    var: ls.stdout
 
 - name: Zero out disk space
   become: True
