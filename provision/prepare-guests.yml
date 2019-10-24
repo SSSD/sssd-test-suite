@@ -1,5 +1,13 @@
 ---
+- hosts: all
+  gather_facts: True
+  roles:
+  - python
+  tags:
+  - always
+
 - hosts: ipa:ldap:client
+  gather_facts: no
   roles:
   - packages
   - common
