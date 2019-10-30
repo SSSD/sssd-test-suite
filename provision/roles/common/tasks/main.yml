@@ -67,3 +67,12 @@
     enabled: yes
     state: reloaded
   when: result.changed
+
+- name: Add ssh key for vagrant user
+  shell: |
+    if [ -f /home/vagrant/.ssh/id_rsa ]; then
+      echo "Key already exist. Nothing to do."
+      exit 255
+    fi
+
+    ssh-keygen -b 2048 -t rsa -q -N "" -f /home/vagrant/.ssh/id_rsa
