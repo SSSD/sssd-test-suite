@@ -154,7 +154,6 @@
     name:
     - clang-analyzer
     - curl-devel
-    - dbus-python
     - fakeroot
     - http-parser-devel
     - krb5-server
