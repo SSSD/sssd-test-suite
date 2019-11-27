@@ -257,7 +257,7 @@ class CreateBoxActor(TestSuiteActor):
         for box in boxes:
             task.step('Box written: {}/{}'.format(args.output, box.boxfile))
 
-    def checksum(path, block_size=65536):
+    def checksum(self, path, block_size=65536):
         sha256 = hashlib.sha256()
         with open(path, 'rb') as f:
             for block in iter(lambda: f.read(block_size), b''):
