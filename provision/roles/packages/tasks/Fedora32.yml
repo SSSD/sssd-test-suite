@@ -21,6 +21,7 @@
     - git
     - ldb-tools
     - libselinux-python3
+    - mc
     - NetworkManager
     - openldap-clients
     - screen

@@ -13,6 +13,7 @@
     - git
     - ldb-tools
     - python3-selinux
+    - mc
     - network-manager
     - ldap-utils
     - screen
