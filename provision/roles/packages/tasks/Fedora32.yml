@@ -146,7 +146,7 @@
     - systemd-devel
     - systemtap-sdt-devel
     - uid_wrapper
-  when: inventory_hostname == 'client'
+  when: inventory_hostname == 'client' or inventory_hostname == 'ipa'
 
 - name: Install Client specific packages required for integration tests
   become: True
@@ -176,7 +176,7 @@
     - rpm-build
     - uid_wrapper
     - valgrind
-  when: inventory_hostname == 'client'
+  when: inventory_hostname == 'client' or inventory_hostname == 'ipa'
 
 - name: Install debug information for specific packages
   become: True
@@ -194,4 +194,4 @@
     - libldb-debuginfo
     - libtalloc-debuginfo
     - libtevent-debuginfo
-  when: inventory_hostname == 'client'
+  when: inventory_hostname == 'client' or inventory_hostname == 'ipa'
