@@ -17,7 +17,8 @@
   shell: |
     /usr/sbin/ipa-adtrust-install --unattended         \
       --netbios-name={{ ipa.netbios | quote }}         \
-      --admin-password={{ ipa.password | quote }}
+      --admin-password={{ ipa.password | quote }}      \
+      --add-sids
     touch /etc/ipa/ipa-adtrust-install-done
   args:
     creates: '/etc/ipa/ipa-adtrust-install-done'
