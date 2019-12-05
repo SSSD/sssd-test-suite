@@ -76,3 +76,6 @@
     fi
 
     ssh-keygen -b 2048 -t rsa -q -N "" -f /home/vagrant/.ssh/id_rsa
+  register: result
+  failed_when: "result.rc != 255 and result.rc != 0"
+  changed_when: "result.rc == 0"
