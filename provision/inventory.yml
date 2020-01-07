@@ -5,7 +5,7 @@ all:
         localhost:
       vars:
         ansible_connection: local
-        ansible_python_interpreter: python3
+        ansible_python_interpreter: auto
     windows:
       hosts:
         ad:

@@ -1,5 +1,5 @@
 ---
-- hosts: all
+- hosts: local:linux
   gather_facts: True
   roles:
   - python
