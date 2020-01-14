@@ -34,7 +34,7 @@ $ cd sssd-test-suite
 $ ./install-cli-deps.sh
 $ ./sssd-test-suite provision host --pool "$POOL_DIR"
 $ cp ./configs/sssd-f30.json config.json
-$ ./sssd-test-suite up client ipa && ./sssd-test-suite provision enroll client ldap
+$ ./sssd-test-suite up client ipa && ./sssd-test-suite provision enroll client ipa
 ```
 
 Now you can:
