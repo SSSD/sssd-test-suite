@@ -17,6 +17,7 @@ machine enrolled to those servers, ready to build and debug your code.
 5. [Tips and Tricks](./docs/tips.md)
 6. [Running SSSD tests](./docs/running-tests.md)
 7. [Creating new boxes](./docs/new-boxes.md)
+8. [Troubleshooting](./docs/troubleshooting.md)
 
 ## Quick Setup
 

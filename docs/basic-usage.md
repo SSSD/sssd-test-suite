@@ -61,14 +61,15 @@ run `./sssd-test-suite ssh client`.
 * Windows machines provide access through RDP. You can use
   `./sssd-test-suite rdp ad -- -g 90%` to open remote desktop of `ad` guest.
   The parameter `-g 90%` opens a window sized to 90% of your screen resolution.
+  This example presumes that `rdesktop` is installed.
 
 ### Helpful commands
 
 * Check guests status: `./sssd-test-suite status`
 * Bring up guests: `./sssd-test-suite up -s`
 * Destroy guests: `./sssd-test-suite destroy`
-* Update boxes: `./sssd-test-suite update`
-* Remove outdated boxes: `./sssd-test-suite prune`
+* Update boxes: `./sssd-test-suite box update`
+* Remove outdated boxes: `./sssd-test-suite box prune`
 * SSH to client: `./sssd-test-suite ssh client`
 * RDP to ad: `./sssd-test-suite rdp ad -- -g 90%`
 
