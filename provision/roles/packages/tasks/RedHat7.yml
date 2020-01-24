@@ -35,7 +35,7 @@
 
 - name: Install LDAP specific packages
   become: True
-  dnf:
+  yum:
     state: present
     name:
     - 389-ds-base
