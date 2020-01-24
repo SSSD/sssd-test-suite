@@ -1,0 +1,198 @@
+- name: SELinux is enabled
+  set_fact:
+    selinux_enabled: true
+
+- name: Install common packages
+  become: True
+  yum:
+    state: present
+    name:
+    - bash-completion
+    - dbus
+    - dnsmasq
+    - gdb
+    - git
+    - ldb-tools
+    - NetworkManager
+    - openldap-clients
+    - screen
+    - systemtap
+    - tig
+    - tmux
+    - valgrind
+    - vim
+    - wget
+
+- name: Install IPA specific packages
+  become: True
+  yum:
+    state: present
+    name:
+    - ipa-server
+    - ipa-server-dns
+    - ipa-server-trust-ad
+  when: inventory_hostname == 'ipa'
+
+- name: Install LDAP specific packages
+  become: True
+  yum:
+    state: present
+    name:
+    - 389-ds-base
+  when: inventory_hostname == 'ldap'
+
+- name: Install Client specific packages
+  become: True
+  yum:
+    state: present
+    name:
+    - adcli
+    - autoconf
+    - automake
+    - bind-utils
+    - c-ares-devel
+    - check
+    - check-devel
+    - cifs-utils-devel
+    - dbus-devel
+    - dbus-libs
+    - diffstat
+    - docbook-style-xsl
+    - doxygen
+    - fakeroot
+    - findutils
+    - freeipa-client
+    - gcc
+    - gdm-pam-extensions-devel
+    - gettext
+    - gettext-devel
+    - glib2-devel
+    - gnutls-utils
+    - http-parser-devel
+    - jansson-devel
+    - keyutils-libs-devel
+    - krb5-devel
+    - krb5-server
+    - libcmocka
+    - libcmocka-devel
+    - libcollection-devel
+    - libcurl-devel
+    - libdhash-devel
+    - libini_config-devel
+    - libldb
+    - libldb-devel
+    - libnfsidmap-devel
+    - libnl3-devel
+    - libpath_utils-devel
+    - libref_array-devel
+    - libselinux-devel
+    - libsemanage-devel
+    - libsmbclient-devel
+    - libtalloc
+    - libtalloc-devel
+    - libtdb
+    - libtdb-devel
+    - libtevent
+    - libtevent-devel
+    - libtool
+    - libuuid-devel
+    - libxml2
+    - libxslt
+    - m4
+    - nspr-devel
+    - nss-devel
+    - nss-tools
+    - nss-util-devel
+    - nss_wrapper
+    - oddjob
+    - oddjob-mkhomedir
+    - openldap-devel
+    - openssh
+    - openssl
+    - openssl-devel
+    - p11-kit-devel
+    - pam-devel
+    - pam_wrapper
+    - pcre-devel
+    - pkgconfig
+    - po4a
+    - popt-devel
+    - dbus-python
+    - pyldb
+    - pytest
+    - python-devel
+    - python-ldap
+    - python-pep8
+    - python-psutil
+    - python-requests
+    - python-pip
+    - python3-devel
+    - realmd
+    - resolv_wrapper
+    - samba-common-tools
+    - samba-devel
+    - samba-winbind
+    - samba4-devel
+    - selinux-policy-targeted
+    - socket_wrapper
+    - softhsm
+    - sssd
+    - sssd-*
+    - systemd
+    - systemd-devel
+    - systemtap-sdt-devel
+    - uid_wrapper
+  when: inventory_hostname == 'client' or inventory_hostname == 'ipa'
+
+- name: Install Client specific packages required for integration tests
+  become: True
+  yum:
+    state: present
+    name:
+    - clang-analyzer
+    - curl-devel
+    - dbus-python
+    - fakeroot
+    - http-parser-devel
+    - krb5-server
+    - krb5-workstation
+    - lcov
+    - libcmocka-devel
+    - mock
+    - nss_wrapper
+    - openldap-clients
+    - openldap-servers
+    - pam_wrapper
+    - redhat-lsb-core
+    - rpm-build
+    - uid_wrapper
+    - valgrind
+  when: inventory_hostname == 'client' or inventory_hostname == 'ipa'
+
+- name: Install debug information for specific packages
+  become: True
+  yum:
+    state: present
+    enablerepo: '*-debuginfo'
+    name:
+    - dbus-debuginfo
+    - ding-libs-debuginfo
+    - libldb-debuginfo
+    - libtalloc-debuginfo
+    - libtevent-debuginfo
+  when: inventory_hostname == 'client' or inventory_hostname == 'ipa'
+
+# To work around https://github.com/psf/requests/issues/4160  
+- name: Remove current python-requests code
+  become: True
+  file:
+    path: /usr/lib/python2.7/site-packages/requests
+    state: absent
+  when: inventory_hostname == 'client' or inventory_hostname == 'ipa'
+
+- name: Upgrade python-requests from pip
+  become: True
+  pip:
+    name: requests
+    state: latest
+  when: inventory_hostname == 'client' or inventory_hostname == 'ipa'
