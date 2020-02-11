@@ -7,7 +7,8 @@
     - dnsmasq
     - gcc
     - libguestfs-tools-c
-    - libselinux-python
+    # Bellow moved to Fedora-version specified config
+    #- libselinux-python
     - libselinux-python3
     - libvirt
     - libvirt-daemon-kvm

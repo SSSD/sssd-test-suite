@@ -17,6 +17,7 @@
     - gdb
     - git
     - ldb-tools
+    - libselinux-python
     - libselinux-python3
     - mc
     - NetworkManager

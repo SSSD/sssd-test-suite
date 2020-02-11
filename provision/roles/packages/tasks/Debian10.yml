@@ -15,6 +15,7 @@
     - python3-selinux
     - mc
     - network-manager
+    - libselinux-python
     - ldap-utils
     - screen
     - systemtap
