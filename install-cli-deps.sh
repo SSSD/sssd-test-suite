@@ -4,19 +4,20 @@
 # You can run it with -y parameter to install packages without confirmation.
 #
 
-read -r -d '' packages <<- EOM
-    python3-argcomplete
-    python3-colorama
-    python3-clint
-    python3-pyyaml
-    python3-requests
-    python3-requests-toolbelt
-EOM
+# Detect Fedora version
+version=$(cat /etc/os-release | grep "VERSION_ID" | cut -d"=" -f2)
+echo "Fedora version detected: $version"
 
-deps=""
-for package in $packages; do
-    deps+="$package "
-done
+# General required packages
+packages+=("python3-argcomplete")
+packages+=("python3-colorama")
+packages+=("python3-clint")
+packages+=("python3-pyyaml")
+packages+=("python3-requests")
+packages+=("python3-requests-toolbelt")
+packages+=("ansible")
 
-sudo dnf install $@ $deps
-    
+echo "Packages to be installed: ${packages[@]}"
+
+sudo dnf install $@ "${packages[@]}"
+
