@@ -2,11 +2,6 @@
   set_fact:
     selinux_enabled: true
 
-- name: Set debuginfo repositories to *-debuginfo
-  set_fact:
-    fedora_repo_debuginfo: '*-debuginfo'
-  when: fedora_repo_debuginfo is undefined
-
 - name: Install common packages
   become: True
   dnf:
@@ -180,18 +175,16 @@
 
 - name: Install debug information for specific packages
   become: True
-  dnf:
-    state: present
-    enablerepo: '{{ fedora_repo_debuginfo }}'
-    name:
-    - authselect-debuginfo
-    - authselect-libs-debuginfo
-    - dbus-debuginfo
-    - ding-libs-debuginfo
-    - libcmocka-debuginfo
-    - libdhash-debuginfo
-    - libini_config-debuginfo
-    - libldb-debuginfo
-    - libtalloc-debuginfo
-    - libtevent-debuginfo
+  shell: |
+    dnf debuginfo-install -y  \
+      authselect              \
+      authselect-libs         \
+      dbus                    \
+      ding-libs               \
+      libcmocka               \
+      libdhash                \
+      libini_config           \
+      libldb                  \
+      libtalloc               \
+      libtevent
   when: inventory_hostname == 'client' or inventory_hostname == 'ipa'
