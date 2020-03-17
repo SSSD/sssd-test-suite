@@ -180,7 +180,6 @@
       authselect              \
       authselect-libs         \
       dbus                    \
-      ding-libs               \
       libcmocka               \
       libdhash                \
       libini_config           \
