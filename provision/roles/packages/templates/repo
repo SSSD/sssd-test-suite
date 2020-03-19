@@ -1,0 +1,19 @@
+[{{ item.name }}]
+name={{ item.name }}
+baseurl={{ item.url }}/x86_64/os/
+enabled=1
+gpgcheck=0
+
+
+[{{ item.name }}-debuginfo]
+name={{ item.name }}-debuginfo
+baseurl={{ item.url }}/x86_64/debug/tree/
+enabled=0
+gpgcheck=0
+
+
+[{{ item.name }}-source]
+name={{ item.name }}-source
+baseurl={{ item.url }}/source/tree/
+enabled=0
+gpgcheck=0
