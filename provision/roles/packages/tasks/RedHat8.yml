@@ -1,0 +1,239 @@
+- name: SELinux is enabled
+  set_fact:
+    selinux_enabled: true
+
+# compose_url: URL of RHEL8 compose that contains repositories
+# buildroot_url: URL of Buildroot repository
+- name: Check settings of additional repositories
+  fail:
+    msg: Make sure that 'compose_url' and 'buildroot_url' facts are set.
+  when: compose_url is not defined or buildroot_url is not defined
+
+- name: 'Fact "compose_url" is set to:'
+  debug:
+    msg: '{{ compose_url }}'
+
+- name: 'Fact "buildroot_url" is set to:'
+  debug:
+    msg: '{{ buildroot_url }}'
+
+- name: Install EPEL repository
+  become: True
+  dnf:
+    state: present
+    name:
+    - 'https://dl.fedoraproject.org/pub/epel/epel-release-latest-{{ ansible_distribution_major_version }}.noarch.rpm'
+
+- name: Remove default repositories
+  become: True
+  file:
+    path: /etc/yum.repos.d/rhel.repo
+    state: absent
+
+- name: Install additional repositories
+  become: True
+  template:
+    src: repo
+    dest: '/etc/yum.repos.d/{{ item.name }}.repo'
+    owner: root
+    group: root
+    mode: 0644
+  with_items:
+  - { name: 'AppStream', url: '{{ compose_url }}/AppStream' }
+  - { name: 'BaseOS', url: '{{ compose_url }}/BaseOS' }
+  - { name: 'CRB', url: '{{ compose_url }}/CRB' }
+  - { name: 'Buildroot', url: '{{ buildroot_url }}' }
+
+- name: Install common packages
+  become: True
+  yum:
+    state: present
+    name:
+    - bash-completion
+    - dbus
+    - dnsmasq
+    - fuse-sshfs
+    - gdb
+    - git
+    - ldb-tools
+    - NetworkManager
+    - openldap-clients
+    - rsync
+    - screen
+    - systemtap
+    - tig
+    - tmux
+    - valgrind
+    - vim
+    - wget
+
+- name: IPA server is not yet supported
+  fail:
+    msg: This is not yet implemented. Use other distribution.
+  when: inventory_hostname == 'ipa'
+
+- name: LDAP server is not supported yet supported
+  fail:
+    msg: This is not yet implemented. Use other distribution.
+  when: inventory_hostname == 'ldap'
+
+- name: Install Client specific packages
+  become: True
+  yum:
+    state: present
+    name:
+    - adcli
+    - autoconf
+    - automake
+    - bind-utils
+    - c-ares-devel
+    - check
+    - check-devel
+    - cifs-utils-devel
+    - dbus-devel
+    - dbus-libs
+    - diffstat
+    - docbook-style-xsl
+    - doxygen
+    - fakeroot
+    - findutils
+    - freeipa-client
+    - gcc
+    - gdm-pam-extensions-devel
+    - gettext
+    - gettext-devel
+    - glib2-devel
+    - gnutls-utils
+    - http-parser-devel
+    - jansson-devel
+    - keyutils-libs-devel
+    - krb5-devel
+    - krb5-server
+    - libcmocka
+    - libcmocka-devel
+    - libcollection-devel
+    - libcurl-devel
+    - libdhash-devel
+    - libini_config-devel
+    - libldb
+    - libldb-devel
+    - libnfsidmap-devel
+    - libnl3-devel
+    - libpath_utils-devel
+    - libref_array-devel
+    - libselinux-devel
+    - libsemanage-devel
+    - libsmbclient-devel
+    - libtalloc
+    - libtalloc-devel
+    - libtdb
+    - libtdb-devel
+    - libtevent
+    - libtevent-devel
+    - libtool
+    - libuuid-devel
+    - libxml2
+    - libxslt
+    - m4
+    - nspr-devel
+    - nss-devel
+    - nss-tools
+    - nss-util-devel
+    - nss_wrapper
+    - oddjob
+    - oddjob-mkhomedir
+    - openldap-devel
+    - openssh
+    - openssl
+    - openssl-devel
+    - p11-kit-devel
+    - pam-devel
+    - pam_wrapper
+    - pcre-devel
+    - pkgconfig
+    - po4a
+    - popt-devel
+    - python2
+    - python2-devel
+    - python3-devel
+    - realmd
+    - samba-common-tools
+    - samba-devel
+    - samba-winbind
+    - samba4-devel
+    - selinux-policy-targeted
+    - socket_wrapper
+    - softhsm
+    - sssd
+    - sssd-*
+    - systemd
+    - systemd-devel
+    - systemtap-sdt-devel
+    - uid_wrapper
+  when: inventory_hostname == 'client' or inventory_hostname == 'ipa'
+
+- name: Install Client specific packages required for integration tests
+  become: True
+  yum:
+    state: present
+    name:
+    - clang-analyzer
+    - curl-devel
+    - fakeroot
+    - http-parser-devel
+    - krb5-server
+    - krb5-workstation
+    - libcmocka-devel
+    - mock
+    - nss_wrapper
+    - openldap-clients
+    - openldap-servers
+    - pam_wrapper
+    - python3-ldap
+    - python3-ldb
+    - python3-psutil
+    - python3-pycodestyle
+    - python3-pytest
+    - python3-requests
+    - redhat-lsb-core
+    - rpm-build
+    - uid_wrapper
+    - valgrind
+  when: inventory_hostname == 'client' or inventory_hostname == 'ipa'
+
+- name: Install debug information for specific packages
+  become: True
+  shell: |
+    dnf debuginfo-install -y  \
+      authselect              \
+      authselect-libs         \
+      dbus                    \
+      libcmocka               \
+      libdhash                \
+      libini_config           \
+      libldb                  \
+      libtalloc               \
+      libtevent
+  args:
+    warn: false
+  when: inventory_hostname == 'client' or inventory_hostname == 'ipa'
+
+- name: Set default python
+  become: True
+  shell: |
+    alternatives --set python /usr/bin/python3
+
+- name: Install mock config
+  become: True
+  template:
+    src: rhel8.mock
+    dest: '/etc/mock/epel-8-x86_64.cfg'
+    owner: root
+    group: root
+    mode: 0644
+  with_items:
+  - repos:
+    - { name: 'BaseOS', url: '{{ compose_url }}/BaseOS' }
+    - { name: 'AppStream', url: '{{ compose_url }}/AppStream' }
+    - { name: 'CRB', url: '{{ compose_url }}/CRB' }
+    - { name: 'Buildroot', url: '{{ buildroot_url }}' }
