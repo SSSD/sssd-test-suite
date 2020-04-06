@@ -19,4 +19,4 @@ for package in $packages; do
 done
 
 sudo dnf install $@ $deps
-    
+

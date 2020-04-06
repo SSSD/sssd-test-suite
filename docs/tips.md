@@ -48,3 +48,54 @@ If you need only the Linux machines, you can use:
 $ ./sssd-test-suite up ipa ldap client -s
 $ ./sssd-test-suite provision enroll ipa ldap client
 ```
+
+## Troubleshooting Ansible Scripts
+
+If we want to run the playbooks with more verbosity level, do the below:
+
+```bash
+$ ANSIBLE_VERBOSITY="8" ./sssd-test-suite provision host --pool "$POOL_DIR"
+```
+
+or just:
+
+```bash
+$ export ANSIBLE_VERBOSITY="8"
+```
+
+and run as normal.
+
+If it were needed, the ansible script can be launched directly from the
+**provision** directory as showed below:
+
+```bash
+# With no verbose
+$ ansible-playbook --extra-vars "LIBVIRT_STORAGE=$POOL_DIR" --ask-become-pass ./prepare-host.yml
+
+# With verbose
+$ ansible-playbook --extra-vars "LIBVIRT_STORAGE=$POOL_DIR" --ask-become-pass ./prepare-host.yml -vvv
+
+# With even more verbose
+$ ansible-playbook --extra-vars "LIBVIRT_STORAGE=$POOL_DIR" --ask-become-pass ./prepare-host.yml -vvvvvvvv
+```
+
+> It is important to run the playbook from the `provision` directory, because ansible will use
+> by default the `ansible.cfg ` file found into the current directory.
+
+To run from any directory we have to specify the `ANSIBLE_CONFIG` environmnet variable as below:
+
+```bash
+$ ANSIBLE_CONFIG=./provision/ansible.cfg ansible-playbook --extra-vars "LIBVIRT_STORAGE=$POOL_DIR" --ask-become-pass ./provision/prepare-host.yml -vvv
+```
+
+---
+
+If we want to run a role from the command line for testing purpose, we can launch do the below,
+from the provision directory:
+
+```shell
+ansible localhost -K -m include_role -a "name=dnsclient" --extra-vars @variables.yml
+```
+
+In this case, execute role **dnsclient** for **localhost** using the variables
+stored at `variables.yml` file.

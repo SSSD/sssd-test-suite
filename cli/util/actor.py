@@ -44,12 +44,7 @@ class TestSuiteActor(Actor):
         argv = argv if argv is not None else []
 
         env = {
-            'ANSIBLE_SSH_ARGS': '-o UserKnownHostsFile=/dev/null '
-                                '-o IdentitiesOnly=yes '
-                                '-o ControlMaster=auto '
-                                '-o ControlPersist=60s '
-                                '-o ServerAliveInterval=15',
-            'ANSIBLE_HOST_KEY_CHECKING': 'false'
+            'ANSIBLE_CONFIG': '{}/provision/ansible.cfg'.format(self.root_dir),
         }
 
         limit = ','.join(limit) if limit else 'all'
@@ -59,7 +54,6 @@ class TestSuiteActor(Actor):
 
         args = [
             '--limit', limit,
-            '--inventory-file', '{}/provision/inventory.yml'.format(self.root_dir),
             *argv,
             '{}/provision/{}'.format(self.root_dir, playbook)
         ]

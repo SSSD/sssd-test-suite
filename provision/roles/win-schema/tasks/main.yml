@@ -5,9 +5,10 @@
   with_items:
   - sudo
 
+# https://docs.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2012-r2-and-2012/cc731033(v=ws.11)
 - name: Install additional schemas
   win_shell: |
-    ldifde -i -f C:\{{ item }}.schema -c dc=X {{ suffix }}
+    ldifde -i -s localhost -f C:\{{ item }}.schema -c "DC=X" "{{ suffix }}"
   register: schema
   failed_when: schema.rc != 0 and schema.stdout is not search('ENTRY_EXISTS')
   changed_when: schema.rc == 0

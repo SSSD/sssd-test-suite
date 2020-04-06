@@ -6,20 +6,20 @@
     - vagrant
 
 # dnf install vagrant pulls in vagrant-libvirt which is not desirable
-- name: Remove vagrant plugins installed through dnf
+- name: Remove vagrant plugins installed through dnf and rubygem-fog-core gem
   become: True
   package:
     state: absent
     name:
-    - vagrant-libvirt
-    - vagrant-sshfs
+      - vagrant-libvirt
+      - vagrant-sshfs
+      - rubygem-fog-core
 
 - name: Install packages needed for virtualization and vagrant plugins
   become: True
   package:
     state: present
     name:
-    - ansible
     - dnsmasq
     - gcc
     - libguestfs-tools-c
@@ -39,7 +39,11 @@
     - ruby-devel
     - rubygem-nokogiri
     - rubygem-ruby-libvirt
+    - rdesktop
+    - ldapvi
+    - openldap-clients
 
+# The order of the plugins matter here. Install first vagrant-libvirt
 - name: Install required vagrant plugins
   shell: |
     vagrant plugin list | grep -w '{{ plugin }}\s'
@@ -55,8 +59,8 @@
   loop_control:
     loop_var: plugin
   with_items:
-  - winrm
-  - winrm-fs
-  - winrm-elevated
-  - vagrant-libvirt
-  - vagrant-sshfs
+    - vagrant-libvirt
+    - vagrant-sshfs
+    - winrm
+    - winrm-fs
+    - winrm-elevated

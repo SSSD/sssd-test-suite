@@ -8,15 +8,17 @@
 - name: Join to Active Directory domain
   become: True
   shell: |
-    echo vagrant | realm join {{ ad.domain | quote }} || exit $?
+    echo vagrant | realm join -v {{ ad.domain | upper | quote }} || exit $?
+    echo vagrant | kinit {{ ad.kerberos.username }} || exit $?
     touch /etc/sssd/ad_enrolled || exit $?
   register: client_ad_installation
-  args:
-    creates: /etc/sssd/ad_enrolled
+  # args:
+  #   creates: /etc/sssd/ad_enrolled
 
 - name: Copy AD keytab to local folder
   become: True
   copy:
+    force: True
     src: /etc/krb5.keytab
     dest: '/etc/sssd/ad.keytab'
     remote_src: yes
@@ -29,5 +31,14 @@
     src: '/etc/sssd/ad.keytab'
     dest: '/shared/enrollment/{{ inventory_hostname }}/ad.keytab'
     remote_src: yes
+  when: client_ad_installation.changed
 
-- include_tasks: 'cleanup.yml'
+- name: Create symbolic link
+  become: True
+  file:
+    force: yes
+    path: '/etc/krb5.keytab'
+    src: '/shared/enrollment/{{ inventory_hostname }}/ad.keytab'
+    state: link
+
+# - include_tasks: 'cleanup.yml'
