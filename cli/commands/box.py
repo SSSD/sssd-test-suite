@@ -129,7 +129,7 @@ class CreateBoxActor(TestSuiteActor):
         Creating new boxes takes some time, so be patient.
         ''')
 
-    def run(self, args):
+    def run(self, args, argv):
         if 'all' in args.guests:
             args.guests = self.AllGuests
 
@@ -144,7 +144,7 @@ class CreateBoxActor(TestSuiteActor):
             if args.update:
                 tasks.add('Update boxes', self.update, args)
             tasks.add('Bring up guests', self.up, args)
-            tasks.add('Provision guests', self.provision, args)
+            tasks.add('Provision guests', self.provision, args, argv)
 
         tasks.add_list([
             Task('Make all images readable', self.make_readable, args, boxes),
@@ -169,8 +169,8 @@ class CreateBoxActor(TestSuiteActor):
     def up(self, task, args):
         self.call(VagrantCommandActor('up'), args)
 
-    def provision(self, task, args):
-        self.call(ProvisionGuestsActor(), args)
+    def provision(self, task, args, argv):
+        self.call(ProvisionGuestsActor(), args, argv)
 
     def make_readable(self, task, args, boxes):
         for box in boxes:
@@ -278,7 +278,7 @@ class PruneBoxActor(TestSuiteActor):
             r"^[^']+'([^']+)' \(v([^)]+)\).*$",
             re.MULTILINE
         )
-        
+
         vgargs = ['--force'] if args.force else []
         result = self.vagrant(args.config, 'box prune', args=vgargs, stdout=subprocess.PIPE)
         for (box, version) in regex.findall(result.stdout.decode('utf-8')):
