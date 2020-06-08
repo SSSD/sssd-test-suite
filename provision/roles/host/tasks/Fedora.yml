@@ -1,44 +1,46 @@
 - name: Install vagrant
   become: True
-  package:
+  dnf:
     state: present
     name:
     - vagrant
+    exclude:
+    - vagrant-libvirt
 
-# dnf install vagrant pulls in vagrant-libvirt which is not desirable
-- name: Remove vagrant plugins installed through dnf
+- name: Remove rpms that conflict with vagrant plugins
   become: True
-  package:
+  dnf:
     state: absent
     name:
+    - rubygem-fog-core
     - vagrant-libvirt
     - vagrant-sshfs
 
-- name: Install packages needed for virtualization and vagrant plugins
+- name: Install packages needed for virtualization
   become: True
-  package:
+  dnf:
     state: present
     name:
-    - ansible
     - dnsmasq
-    - gcc
     - libguestfs-tools-c
-    - libselinux-python3
     - libvirt
     - libvirt-daemon-kvm
+    - NetworkManager
+    - qemu-kvm
+
+- name: Install packages needed to build vagrant-libvirt plugin
+  become: True
+  dnf:
+    state: present
+    name:
+    - gcc
+    - libvirt
     - libvirt-devel
     - libxml2-devel
     - libxslt-devel
-    - NetworkManager
-    - python3-clint
-    - python3-dnf
-    - python3-requests
-    - python3-requests-toolbelt
-    - python3-winrm
-    - qemu-kvm
+    - make
+    - redhat-rpm-config
     - ruby-devel
-    - rubygem-nokogiri
-    - rubygem-ruby-libvirt
 
 - name: Install required vagrant plugins
   shell: |
@@ -56,7 +58,6 @@
     loop_var: plugin
   with_items:
   - winrm
-  - winrm-fs
   - winrm-elevated
   - vagrant-libvirt
   - vagrant-sshfs
