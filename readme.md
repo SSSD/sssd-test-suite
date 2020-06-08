@@ -45,7 +45,7 @@ There are number of other dependencies that are installed automatically using
 
 ### I want to try SSSD with FreeIPA
 
-```bash
+```console
 $ POOL_DIR=/path/to/sssd/test/suite/pool
 $ git clone https://github.com/SSSD/sssd-test-suite.git
 $ cd sssd-test-suite
@@ -53,7 +53,7 @@ $ sudo dnf install ansible
 $ sudo pip3 install -r ./requirements.txt
 $ ./sssd-test-suite provision host --pool "$POOL_DIR"
 $ cp ./configs/sssd-f30.json config.json
-$ ./sssd-test-suite up client ipa && ./sssd-test-suite provision enroll client ipa
+$ ./sssd-test-suite provision enroll client ipa
 ```
 
 Now you can:
@@ -63,7 +63,7 @@ Now you can:
 
 ### I want to try SSSD with native LDAP
 
-```bash
+```console
 $ POOL_DIR=/path/to/sssd/test/suite/pool
 $ git clone https://github.com/SSSD/sssd-test-suite.git
 $ cd sssd-test-suite
@@ -71,7 +71,7 @@ $ sudo dnf install ansible
 $ sudo pip3 install -r ./requirements.txt
 $ ./sssd-test-suite provision host --pool "$POOL_DIR"
 $ cp ./configs/sssd-f30.json config.json
-$ ./sssd-test-suite up client ldap && ./sssd-test-suite provision enroll client ldap
+$ ./sssd-test-suite provision enroll client ldap
 ```
 
 Now you can:
@@ -82,7 +82,7 @@ Now you can:
 
 ### I want to try SSSD with Active Directory
 
-```bash
+```console
 $ POOL_DIR=/path/to/sssd/test/suite/pool
 $ git clone https://github.com/SSSD/sssd-test-suite.git
 $ cd sssd-test-suite
@@ -90,7 +90,7 @@ $ sudo dnf install ansible
 $ sudo pip3 install -r ./requirements.txt
 $ ./sssd-test-suite provision host --pool "$POOL_DIR"
 $ cp ./configs/sssd-f30.json config.json
-$ ./sssd-test-suite up client ad && ./sssd-test-suite provision enroll client ad
+$ ./sssd-test-suite provision enroll client ad
 ```
 
 Now you can:
@@ -99,7 +99,7 @@ Now you can:
 
 ### I want to try SSSD with FreeIPA, LDAP and Active Directory (including child domain)
 
-```bash
+```console
 $ POOL_DIR=/path/to/sssd/test/suite/pool
 $ git clone https://github.com/SSSD/sssd-test-suite.git
 $ cd sssd-test-suite
@@ -107,7 +107,7 @@ $ sudo dnf install ansible
 $ sudo pip3 install -r ./requirements.txt
 $ ./sssd-test-suite provision host --pool "$POOL_DIR"
 $ cp ./configs/sssd-f30.json config.json
-$ ./sssd-test-suite up -s && ./sssd-test-suite provision guest && ./sssd-test-suite provision enroll
+$ ./sssd-test-suite provision enroll all
 ```
 
 Now you can:
