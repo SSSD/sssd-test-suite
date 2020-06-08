@@ -20,67 +20,21 @@
 #
 
 import os
-
-from lib.command import Actor
-from lib.shell import Shell
+import nutcli
 
 
-class TestSuiteActor(Actor):
+class TestSuiteActor(nutcli.commands.Actor):
     LinuxGuests = ['ipa', 'ldap', 'client']
     WindowsGuests = ['ad', 'ad-child']
     AllGuests = WindowsGuests + LinuxGuests
 
-    def __init__(self):
-        super().__init__()
-        self.root_dir = os.path.abspath(os.path.dirname(os.path.realpath(__file__)) + '/../..')
-        self.pool_dir = self.root_dir + '/pool'
-        self.default_config = os.environ.get(
-            'SSSD_TEST_SUITE_CONFIG',
-            self.root_dir + '/config.json'
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.ansible_dir = os.path.abspath(
+            os.path.dirname(os.path.realpath(__file__)) + '/../../provision'
         )
 
-    def ansible(self, playbook, unattended, limit=None, argv=None, **kwargs):
-        limit = limit if limit is not None else []
-        argv = argv if argv is not None else []
-
-        env = {
-            'ANSIBLE_SSH_ARGS': '-o UserKnownHostsFile=/dev/null '
-                                '-o IdentitiesOnly=yes '
-                                '-o ControlMaster=auto '
-                                '-o ControlPersist=60s '
-                                '-o ServerAliveInterval=15',
-            'ANSIBLE_HOST_KEY_CHECKING': 'false'
-        }
-
-        limit = ','.join(limit) if limit else 'all'
-
-        if not unattended:
-            argv.append('--ask-become-pass')
-
-        args = [
-            '--limit', limit,
-            '--inventory-file', '{}/provision/inventory.yml'.format(self.root_dir),
-            *argv,
-            '{}/provision/{}'.format(self.root_dir, playbook)
-        ]
-
-        return Shell().run(['ansible-playbook'] + args, env=env, **kwargs)
-
-    def vagrant(self, config, command, args=None, argv=None, env=None, **kwargs):
-        args = args if args is not None else []
-        argv = argv if argv is not None else []
-        env = env if env is not None else {}
-
-        env = env.copy()
-        env.update({
-            'VAGRANT_CWD': self.root_dir,
-            'SSSD_TEST_SUITE_CONFIG': config if config else self.default_config
-        })
-
-        if argv:
-            args += ['--'] + argv
-
-        return Shell().run(
-            ['vagrant'] + command.split(' ') + args,
-            env=env, **kwargs
+        self.vagrant_dir = os.path.abspath(
+            os.path.dirname(os.path.realpath(__file__)) + '/../..'
         )

@@ -5,44 +5,34 @@ import argcomplete
 import argparse
 import sys
 import textwrap
+import nutcli.commands
+import nutcli.runner
 
-# Command Actors
-import commands.box as box
-import commands.provision as provision
-import commands.vagrant as vagrant
-import commands.cloud as cloud
-import commands.tests as tests
 
-from lib.command import CommandParser, CommandGroup, Runner
+import commands.vagrant
+import commands.provision
+import commands.cloud
+import commands.box
+import commands.tests
 
 
 class Program:
     def setup_parser(self):
-        commands = CommandParser([
-            CommandGroup('Vagrant Commands', vagrant.Commands),
-            CommandGroup('Automation', [
-                tests.Commands,
-                provision.Commands,
-                box.Commands,
-                cloud.Commands
-            ])
-        ])
-
         parser = argparse.ArgumentParser(
             formatter_class=argparse.RawTextHelpFormatter
         )
+
         parser.add_argument(
             '-c', '--config', action='store', type=str, dest='config',
             help='Path to SSSD Test Suite configuration file',
             default=None
         )
 
-        commands.setup_parser(parser)
 
         parser.epilog = textwrap.dedent('''
         If --config option is not set the default configuration file is
         read from SSSD_TEST_SUITE_CONFIG environment variable. If this
-        variable is not set it defaults to config.json in the
+        variable is not set it defaults to config.json file in the
         sssd-test-suite root directory.
 
         All commands should use the same configuration file. It is highly
@@ -50,12 +40,28 @@ class Program:
         configuration file.
         ''')
 
+        nutcli.commands.CommandParser()([
+            nutcli.commands.CommandGroup('Vagrant Commands')([
+                commands.vagrant.Commands,
+            ]),
+            nutcli.commands.CommandGroup('Automation')([
+                commands.tests.Commands,
+                commands.provision.Commands,
+                commands.box.Commands,
+                commands.cloud.Commands
+            ])
+        ]).setup_parser(parser)
         argcomplete.autocomplete(parser)
 
         return parser
 
     def main(self, argv):
-        return Runner('sssd-test-suite').execute(self.setup_parser(), argv)
+      parser = self.setup_parser()
+      runner = nutcli.runner.Runner('sssd-test-suite', parser).setup_parser()
+
+      args = runner.parse_args(argv)
+      runner.default_logger()
+      return runner.execute(args)
 
 
 if __name__ == "__main__":

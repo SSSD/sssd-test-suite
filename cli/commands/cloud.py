@@ -23,8 +23,10 @@ import json
 import re
 import textwrap
 
-from lib.actions import UniqueAppendAction
-from lib.command import Command, CommandGroup, CommandParser
+from nutcli.commands import Command, CommandParser, CommandGroup
+from nutcli.parser import UniqueAppendAction
+from nutcli.tasks import Task, TaskList
+
 from util.actor import TestSuiteActor
 from util.vgcloud import VagrantCloud
 
@@ -33,7 +35,7 @@ class CloudActor(TestSuiteActor):
     def __init__(self):
         super().__init__()
 
-        self.cloud_config_file = '{}/vg-cloud.json'.format(self.root_dir)
+        self.cloud_config_file = '{}/vg-cloud.json'.format(self.vagrant_dir)
 
     def setup_parser(self, parser):
         parser.add_argument(
@@ -77,20 +79,20 @@ class CloudGetCredentialsActor(CloudActor):
     def setup_parser(self, parser):
         pass
 
-    def run(self, args):
+    def __call__(self):
         (username, token) = self.get_credentials(None, None)
         print('Username: {}'.format(username))
         print('Token: {}'.format(token))
 
 
 class CloudSetCredentialsActor(CloudActor):
-    def run(self, args):
-        self.save_credentials(args.username, args.token)
+    def __call__(self, username, token):
+        self.save_credentials(username, token)
 
 
 class CloudListActor(CloudActor):
-    def run(self, args):
-        api = self.get_cloud_api(args.username, args.token)
+    def __call__(self, username, token):
+        api = self.get_cloud_api(username, token)
         for box in api.list_boxes():
             print('- {:50s} ({})'.format(box.tag, box.version))
 
@@ -110,12 +112,12 @@ class CloudPruneActor(CloudActor):
         kept.
         ''')
 
-    def run(self, args):
-        api = self.get_cloud_api(args.username, args.token)
+    def __call__(self, username, token, keep=2):
+        api = self.get_cloud_api(username, token)
         for box in api.list_boxes():
             versions = api.list_versions(box.name)
-            for version in versions[:-args.keep]:
-                self.message('Removing {} {}'.format(box.name, version))
+            for version in versions[:-keep]:
+                self.info(f'Removing {box.name} {version}')
                 api.version_delete(box.name, version)
 
 
@@ -137,13 +139,17 @@ class CloudUploadActor(CloudActor):
           sssd-fedora30-client-20190530.01.box
         ''')
 
-    def run(self, args):
-        api = self.get_cloud_api(args.username, args.token)
-        tasks = self.tasklist('Upload Box')
-        for box_file in args.boxes:
+    def __call__(self, username, token, boxes):
+        api = self.get_cloud_api(username, token)
+        tasks = TaskList('Upload Box', logger=self.logger)
+        for box_file in boxes:
             info = self.get_box_info(box_file)
-            tasks.add('Creating box {name} ({version})'.format(**info), self.upload_task, api, box_file, info)
-        tasks.run()
+            tasks.tasks.append(
+                Task(f'Creating box {info} ({version})'.format(**info))(
+                    self.upload_task, api, box_file, info
+                )
+            )
+        tasks.execute()
 
     def upload_task(self, task, api, box_file, info):
         self.create_container(api, info)
@@ -180,21 +186,23 @@ class CloudUploadActor(CloudActor):
         return None
 
 
-Commands = Command('cloud', 'Access vagrant cloud', CommandParser([
-    CommandGroup('Cloud Operations', [
-        Command('list', 'List boxes stored in vagrant cloud', CloudListActor),
-        Command('upload', 'Upload boxes to vagrant cloud', CloudUploadActor),
-        Command('prune', 'Delete outdated versions of available boxes', CloudPruneActor),
-    ]),
-    CommandGroup('Local Credentials', [
-        Command('get-creds', 'Print your current credentials', CloudGetCredentialsActor),
-        Command('set-creds', 'Save your vagrant cloud token and username', CloudSetCredentialsActor),
-    ])
-], description=textwrap.dedent('''
-These commands access vagrant cloud at https://app.vagrantup.com.
+Commands = Command('cloud', 'Access vagrant cloud', CommandParser(
+    description=textwrap.dedent('''
+    These commands access vagrant cloud at https://app.vagrantup.com.
 
-All commands takes --username and --token parameters that represents your
-username and access token. You can use 'set-creds' command to save
-these parameters in ./sssd-test-suite/vg-cloud.json. Please, keep in mind
-that authentication token is stored in plain text.
-''')))
+    All commands takes --username and --token parameters that represents your
+    username and access token. You can use 'set-creds' command to save
+    these parameters in ./sssd-test-suite/vg-cloud.json. Please, keep in mind
+    that authentication token is stored in plain text.
+    '''))([
+        CommandGroup('Cloud Operations')([
+            Command('list', 'List boxes stored in vagrant cloud', CloudListActor()),
+            Command('upload', 'Upload boxes to vagrant cloud', CloudUploadActor()),
+            Command('prune', 'Delete outdated versions of available boxes', CloudPruneActor()),
+        ]),
+        CommandGroup('Local Credentials')([
+            Command('get-creds', 'Print your current credentials', CloudGetCredentialsActor()),
+            Command('set-creds', 'Save your vagrant cloud token and username', CloudSetCredentialsActor()),
+        ])
+    ])
+)

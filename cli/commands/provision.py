@@ -21,15 +21,36 @@
 
 import subprocess
 import textwrap
+import nutcli.utils
+import argparse
 
-from commands.vagrant import VagrantCommandActor
-from lib.actions import UniqueAppendAction
-from lib.command import CommandParser, Command
-from lib.task import Task
+from nutcli.commands import Command, CommandParser
+from nutcli.parser import UniqueAppendAction
+from nutcli.tasks import Task, TaskList
+
 from util.actor import TestSuiteActor
+from commands.vagrant import VagrantUpActor
 
 
-class ProvisionHostActor(TestSuiteActor):
+class AnsibleActor(TestSuiteActor):
+    def _exec_ansible(self, playbook, unattended=False, limit=None, argv=None):
+        argv = nutcli.utils.get_as_list(argv)
+
+        env = {
+            'ANSIBLE_CONFIG': f'{self.ansible_dir}/ansible.cfg'
+        }
+
+        limit = ','.join(limit) if limit is not None else 'all'
+
+        if not unattended:
+            argv.append('--ask-become-pass')
+
+        args = ['--limit', limit, *argv, playbook]
+
+        return self.shell(['ansible-playbook', *args], env=env)
+
+
+class ProvisionHostActor(AnsibleActor):
     def setup_parser(self, parser):
         parser.add_argument(
             '-p', '--pool', action='store', type=str, dest='pool',
@@ -42,6 +63,11 @@ class ProvisionHostActor(TestSuiteActor):
             '-u', '--unattended', action='store_true',
             default=False, dest='unattended',
             help='Do not ask for sudo password (requires passwordless sudo).'
+        )
+
+        parser.add_argument(
+            'argv', nargs=argparse.REMAINDER,
+            help='Additional arguments passed to the ansible-playbook command'
         )
 
         parser.epilog = textwrap.dedent('''
@@ -57,34 +83,33 @@ class ProvisionHostActor(TestSuiteActor):
         All parameters placed after -- will be passed to ansible-playbook.
         ''')
 
-    def run(self, args, argv):
-        self.tasklist('Provisioning Host', [
-            Task('Install Ansible', self.install_dependencies),
-            Task('Run Ansible Playbook', self.run_ansible, args, argv)
-        ]).run()
-
-    def install_dependencies(self, task):
-        self.shell('''
-        which ansible-playbook &> /dev/null && exit 0
-        which dnf || exit 1
-        dnf install -y ansible
-        ''', stdout=subprocess.PIPE)
-
-    def run_ansible(self, task, args, argv):
-        argv.append('--extra-vars')
-        argv.append('LIBVIRT_STORAGE={}'.format(args.pool))
-        self.ansible('prepare-host.yml', args.unattended, argv=argv)
+    def __call__(self, pool, unattended, argv):
+        argv += ['--extra-vars', f'LIBVIRT_STORAGE={pool}']
+        self._exec_ansible(
+            f'{self.ansible_dir}/prepare-host.yml',
+            unattended=unattended, limit=None, argv=argv
+        )
 
 
-class ProvisionGuestsActor(TestSuiteActor):
+class ProvisionGuestsActor(AnsibleActor):
     def setup_parser(self, parser):
         parser.add_argument(
-            'guests', nargs='*',
-            choices=['all'] + self.AllGuests,
-            action=UniqueAppendAction,
-            default='all',
+            '-p', '--playbook', action='store', type=str, dest='playbook',
+            help='Playbook to execute (defaults to prepare-guests.yml)',
+            metavar='PLAYBOOK'
+        )
+
+        parser.add_argument(
+            'guests', nargs='*', choices=['all'] + self.AllGuests,
+            action=UniqueAppendAction, default='all',
             help='Guests to provision. '
                  'Multiple guests can be set. (Default "all")'
+        )
+
+
+        parser.add_argument(
+            'argv', nargs=argparse.REMAINDER,
+            help='Additional arguments passed to the ansible-playbook command'
         )
 
         parser.epilog = textwrap.dedent('''
@@ -95,18 +120,19 @@ class ProvisionGuestsActor(TestSuiteActor):
         All parameters placed after -- will be passed to ansible-playbook.
         ''')
 
-    def run(self, args, argv):
-        guests = args.guests if 'all' not in args.guests else ['all']
-        self.ansible('prepare-guests.yml', True, limit=guests, argv=argv)
+    def __call__(self, guests, playbook=None, argv=None):
+        guests = guests if 'all' not in guests else ['all']
+        self._exec_ansible(
+            f'{self.ansible_dir}/prepare-guests.yml',
+            unattended=True, limit=guests, argv=argv
+        )
 
 
-class EnrollActor(TestSuiteActor):
+class EnrollActor(AnsibleActor):
     def setup_parser(self, parser):
         parser.add_argument(
-            'guests', nargs='*',
-            choices=['all'] + self.AllGuests,
-            action=UniqueAppendAction,
-            default='all',
+            'guests', nargs='*', choices=['all'] + self.AllGuests,
+            action=UniqueAppendAction, default='all',
             help='Guests that the client should enroll to. '
                  'Multiple guests can be set. (Default "all")'
         )
@@ -119,6 +145,11 @@ class EnrollActor(TestSuiteActor):
         parser.add_argument(
             '-u', '--unattended', action='store_true', dest='unattended',
             help='Do not ask for sudo password (requires passwordless sudo).'
+        )
+
+        parser.add_argument(
+            'argv', nargs=argparse.REMAINDER,
+            help='Additional arguments passed to the ansible-playbook command'
         )
 
         parser.epilog = textwrap.dedent('''
@@ -150,38 +181,41 @@ class EnrollActor(TestSuiteActor):
         All parameters placed after -- will be passed to ansible-playbook.
         ''')
 
-    def run(self, args, argv):
-        self.tasklist('Enroll', [
-            Task('Start Guest Machines', self.up, args),
-            Task('Enroll Machines', self.enroll, args, argv)
-        ]).run()
+    def __call__(self, guests, sequence, unattended, argv):
+        TaskList('enroll', logger=self.logger)([
+            Task('Start Guest Machines', taskarg=False)(
+                VagrantUpActor(parent=self), guests, sequence
+            ),
+            Task('Enroll Machines', taskarg=False)(
+                self.enroll, guests, unattended, argv
+            ),
+        ]).execute()
 
-    def up(self, task, args):
-        self.call(VagrantCommandActor('up'), args)
 
-    def enroll(self, task, args, argv):
-        if 'all' in args.guests:
+    def enroll(self, guests, unattended, argv):
+        if 'all' in guests:
             limit = ['all']
         else:
-            limit = args.guests
-            skip_guests = set(self.AllGuests) - set(args.guests)
-            skip_tags = ['enroll-{}'.format(guest) for guest in skip_guests]
+            limit = guests
+            skip_guests = set(self.AllGuests) - set(guests)
+            skip_tags = [f'enroll-{guest}' for guest in skip_guests]
             if 'ipa' in skip_guests:
                 skip_tags.append('enroll-local')
             else:
                 limit.append('localhost')
 
-            argv.append('--skip-tags')
-            argv.append(','.join(skip_tags))
+            argv += ['--skip-tags', ','.join(skip_tags)]
 
-        self.ansible('enroll.yml', args.unattended, limit=limit, argv=argv)
+        self._exec_ansible(
+            f'{self.ansible_dir}/enroll.yml',
+            unattended=unattended, limit=guests, argv=argv
+        )
 
 
-class LdapActor(TestSuiteActor):
+class ProvisionLDAPActor(TestSuiteActor):
     def setup_parser(self, parser):
         parser.add_argument(
-            'ldif', nargs='*',
-            action=UniqueAppendAction,
+            'ldif', nargs='*', action=UniqueAppendAction,
             help='Path to ldif file. Multiple paths can be set.'
         )
 
@@ -190,21 +224,26 @@ class LdapActor(TestSuiteActor):
             help='Remove existing content from LDAP'
         )
 
-    def run(self, args):
-        tasks = self.tasklist('LDAP')
+    def __call__(self, ldif, clear=False):
+        tasklist = TaskList('LDAP', logger=self.logger)
 
-        if not args.clear and not args.ldif:
-            self.parser.print_help()
+        if not clear and not ldif:
+            self.error('You have to specify at least one parameter.')
+            return 1
 
-        if args.clear:
-            tasks.add('Clear current content', self.clear)
+        if clear:
+            tasklist.tasks.append(
+                Task('Clear current content', taskarg=False)(self.clear)
+            )
 
-        for ldif in args.ldif:
-            tasks.add('Import {}'.format(ldif), self.import_ldif, ldif)
+        for ldif in ldif:
+            tasklist.tasks.append(
+                Task(f'Import {ldif}', taskarg=False)(self.import_ldif, ldif)
+            )
 
-        tasks.run()
+        tasklist.execute()
 
-    def clear(self, task):
+    def clear(self):
         self.shell(r'''
         LDAP_URI="ldap://192.168.100.20"
         BASE_DN="dc=ldap,dc=vm"
@@ -213,6 +252,11 @@ class LdapActor(TestSuiteActor):
 
         FILTER="(&(objectClass=*)(!(cn=Directory Administrators)))"
         SEARCH=`ldapsearch -x -D "$BIND_DN" -w "$BIND_PW" -H "$LDAP_URI" -b "$BASE_DN" -s one "$FILTER"`
+        ret=$?
+        if [ $ret -ne 0 ]; then
+            exit $ret
+        fi
+
         OBJECTS=`echo "$SEARCH" | grep dn | sed "s/dn: \(.*\)/'\1'/" | paste -sd " "`
 
         echo "$SEARCH" | grep numEntries &> /dev/null
@@ -223,47 +267,57 @@ class LdapActor(TestSuiteActor):
 
         echo "Removing existing objects."
         eval "ldapdelete -r -x -D '$BIND_DN' -w '$BIND_PW' -H '$LDAP_URI' $OBJECTS"
+        exit $?
         ''')
 
-    def import_ldif(self, task, ldif):
-        self.shell('''
+    def import_ldif(self, ldif):
+        self.shell(f'''
         LDAP_URI="ldap://192.168.100.20"
         BASE_DN="dc=ldap,dc=vm"
         BIND_DN="cn=Directory Manager"
         BIND_PW="123456789"
 
-        echo "Importing LDIF: $LDIF"
         ldapadd -x -D "$BIND_DN" -w "$BIND_PW" -H "$LDAP_URI" -f "{ldif}"
-        '''.format(ldif=ldif))
+        exit $?
+        ''')
 
 
-class RearmWindowsActor(TestSuiteActor):
+class RearmWindowsActor(AnsibleActor):
     def setup_parser(self, parser):
         parser.add_argument(
-            'guests', nargs='*',
-            choices=['all'] + self.WindowsGuests,
-            action=UniqueAppendAction,
-            default='all',
+            'guests', nargs='*', choices=['all'] + self.WindowsGuests,
+            action=UniqueAppendAction, default='all',
             help='Guests that the client should enroll to. '
                  'Multiple guests can be set. (Default "all")'
+        )
+
+        parser.add_argument(
+            'argv', nargs=argparse.REMAINDER,
+            help='Additional arguments passed to the ansible-playbook command'
         )
 
         parser.epilog = textwrap.dedent('''
         This will renew the Windows evaluation license when it is expired. It
         will trigger guest reboot after the renewal.
 
-        The renewal can be done only 6 times.
+        The renewal can be done only 6 times. You have to recreate the machine
+        after that.
+
+        All parameters placed after -- will be passed to ansible-playbook.
         ''')
 
-    def run(self, args, argv):
-        guests = args.guests if 'all' not in args.guests else ['all']
-        self.ansible('rearm-windows-license.yml', True, limit=guests, argv=argv)
+    def __call__(self, guests, argv):
+        guests = guests if 'all' not in guests else ['all']
+        self._exec_ansible(
+            f'{self.ansible_dir}/rearm-windows-license.yml',
+            unattended=True, limit=guests, argv=argv
+        )
 
 
-Commands = Command('provision', 'Provision machines', CommandParser([
-    Command('host', 'Provision host machine', ProvisionHostActor),
-    Command('guest', 'Provision selected guests machines', ProvisionGuestsActor),
-    Command('enroll', 'Setup trusts and enroll client to domains', EnrollActor),
-    Command('ldap', 'Import ldif into ldap server', LdapActor),
-    Command('rearm', 'Renew windows license', RearmWindowsActor),
+Commands = Command('provision', 'Provision machines', CommandParser()([
+    Command('host', 'Provision host machine', ProvisionHostActor()),
+    Command('guest', 'Provision selected guests machines', ProvisionGuestsActor()),
+    Command('enroll', 'Setup trusts and enroll client to domains', EnrollActor()),
+    Command('ldap', 'Import ldif into ldap server', ProvisionLDAPActor()),
+    Command('rearm', 'Renew windows license', RearmWindowsActor()),
 ]))

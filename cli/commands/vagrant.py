@@ -19,21 +19,22 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import textwrap
+import nutcli
+import argparse
+import os
+import re
 
-from lib.shell import ShellScriptError
-from lib.actions import UniqueAppendAction
-from lib.command import CommandList, Command
+from nutcli.commands import Command
+from nutcli.parser import UniqueAppendAction
+
 from util.actor import TestSuiteActor
 
 
 class VagrantCommandActor(TestSuiteActor):
-    def __init__(self, command):
-        super().__init__()
+    def __init__(self, command, ok_rc=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.command = command
-
-    def _may_continue_on_exception(self, err):
-        return False
+        self.ok_rc = nutcli.utils.get_as_list(ok_rc)
 
     def setup_parser(self, parser):
         parser.add_argument(
@@ -50,77 +51,192 @@ class VagrantCommandActor(TestSuiteActor):
             help='Run operation on guests in sequence (one by one)'
         )
 
-    def run(self, args, argv=None):
-        argv = argv if argv is not None else []
-        guests = args.guests if 'all' not in args.guests else self.AllGuests
+        parser.add_argument(
+            '--argv', dest='argv', nargs=argparse.REMAINDER, default=[],
+            help='Additional arguments passed to the command'
+        )
+
+    def _exec_vagrant(self, args=None, argv=None, **kwargs):
+        if self.cli_args.config is not None:
+            config = self.cli_args.config
+        else:
+            config = os.environ.get(
+               'SSSD_TEST_SUITE_CONFIG',
+                self.vagrant_dir + '/config.json'
+            )
+
+        command = ['vagrant', *self.command.split(' '), *nutcli.utils.get_as_list(args)]
+        if argv is not None:
+            command += ['--'] + argv
+
+        return self.shell(
+            command,
+            env={
+                'VAGRANT_CWD': self.vagrant_dir,
+                'SSSD_TEST_SUITE_CONFIG': config
+            },
+            **kwargs
+        )
+
+    def __call__(self, guests, sequence=False, argv=None):
+        argv = nutcli.utils.get_as_list(argv)
+        def run_guest(guests, argv):
+            try:
+                self._exec_vagrant(argv + guests)
+            except nutcli.shell.ShellCommandError as err:
+                if err.rc not in self.ok_rc:
+                    raise
+
+        guests = guests if 'all' not in guests else self.AllGuests
         guests.sort()
 
-        if args.sequence:
+        if sequence:
             for guest in guests:
-                try:
-                    self.vagrant(args.config, self.command, argv + [guest])
-                except ShellScriptError as err:
-                    self._may_continue_on_exception(err)
-            return
+                run_guest([guest], argv)
+        else:
+            run_guest(guests, argv)
 
-        try:
-            self.vagrant(args.config, self.command, argv + guests)
-        except ShellScriptError as err:
-            if not self._may_continue_on_exception(err):
-                raise
+
+class VagrantStatusActor(VagrantCommandActor):
+    def __init__(self, *args, **kwargs):
+        super().__init__('status', None, *args, **kwargs)
+
+
+class VagrantUpActor(VagrantCommandActor):
+    def __init__(self, *args, **kwargs):
+        super().__init__('up', None, *args, **kwargs)
+
+
+class VagrantHaltActor(VagrantCommandActor):
+    def __init__(self, *args, **kwargs):
+        super().__init__('halt', None, *args, **kwargs)
 
 
 class VagrantDestroyActor(VagrantCommandActor):
-    def __init__(self):
-        super().__init__('destroy')
+    def __init__(self, *args, **kwargs):
+        super().__init__('destroy', [2], *args, **kwargs)
 
-    def _may_continue_on_exception(self, err):
-        return err.returncode == 2
-
-    def run(self, args, argv=None):
-        argv = argv if argv is not None else []
+    def __call__(self, guests, sequence=False, argv=None):
+        argv = nutcli.utils.get_as_list(argv)
         if '-f' not in argv:
             argv.append('-f')
 
-        super().run(args, argv)
+        super().__call__(guests, sequence, argv)
 
 
-class VagrantExternalCommandActor(TestSuiteActor):
-    def __init__(self, command, allowed_guests, example):
-        super().__init__()
-        self.command = command
-        self.allowed_guest = allowed_guests
-        self.example = example
+class VagrantReloadActor(VagrantCommandActor):
+    def __init__(self, *args, **kwargs):
+        super().__init__('reload', None, *args, **kwargs)
+
+
+class VagrantResumeActor(VagrantCommandActor):
+    def __init__(self, *args, **kwargs):
+        super().__init__('resume', None, *args, **kwargs)
+
+
+class VagrantSuspendActor(VagrantCommandActor):
+    def __init__(self, *args, **kwargs):
+        super().__init__('suspend', None, *args, **kwargs)
+
+
+class VagrantUpdateActor(VagrantCommandActor):
+    def __init__(self, *args, **kwargs):
+        super().__init__('box update', None, *args, **kwargs)
+
+
+class VagrantPackageActor(VagrantCommandActor):
+    def __init__(self, *args, **kwargs):
+        super().__init__('package', None, *args, **kwargs)
+
+
+class VagrantPruneActor(VagrantCommandActor):
+    def __init__(self, *args, **kwargs):
+        super().__init__('box prune', None, *args, **kwargs)
 
     def setup_parser(self, parser):
         parser.add_argument(
-            'guest',
-            type=str,
-            choices=self.allowed_guest
+            '-f', '--force', action='store_true', dest='force',
+            help='Destroy without confirmation even when box is in use'
         )
 
-        parser.epilog = textwrap.dedent('''
-        All parameters placed after -- will be passed to {cmd} command.
-        For example:
-            sssd-test-suite {cmd} {example}
-        ''').format(cmd=self.command, example=self.example)
+        parser.add_argument(
+            '--argv', dest='argv', nargs=argparse.REMAINDER, default=[],
+            help='Additional arguments passed to the command'
+        )
 
-    def run(self, args, argv):
-        self.vagrant(args.config, self.command, [args.guest], argv)
+    def __call__(self, force, argv=None):
+        regex = re.compile(
+            r"^[^']+'([^']+)' \(v([^)]+)\).*$",
+            re.MULTILINE
+        )
+
+        args = nutcli.utils.get_as_list(argv)
+        if force:
+            args.append('--force')
+
+        result = self._exec_vagrant(args=args, argv=None, capture_output=True)
+        for (box, version) in regex.findall(result.stdout):
+            volume = '{box}_vagrant_box_image_{version}.img'.format(
+                box=box.replace('/', '-VAGRANTSLASH-'),
+                version=version
+            )
+
+            self.info(f'Box {box}, version {version} is outdated.')
+            self.info(f'  ...removing {volume}')
+
+            self.shell('''
+            sudo virsh vol-info {volume} --pool {pool} &> /dev/null
+            if [ $? -ne 0 ]; then
+                exit 0
+            fi
+
+            sudo virsh vol-delete {volume} --pool {pool}
+            '''.format(volume=volume, pool='sssd-test-suite'))
 
 
-Commands = CommandList([
-    Command('status', 'Show current state of guest machines', VagrantCommandActor('status')),
-    Command('up', 'Bring up guest machines', VagrantCommandActor('up')),
-    Command('halt', 'Halt guest machines', VagrantCommandActor('halt')),
-    Command('destroy', 'Destroy guest machines', VagrantDestroyActor),
-    Command('reload', 'Restarts guest machines', VagrantCommandActor('reload')),
-    Command('resume', 'Resume suspended guest machines', VagrantCommandActor('resume')),
-    Command('suspend', 'Suspends guest machines', VagrantCommandActor('suspend')),
-    Command('ssh', 'Open SSH to guest machine', VagrantExternalCommandActor(
-        'ssh', TestSuiteActor.LinuxGuests, 'client -- echo Hello')
-    ),
-    Command('rdp', 'Open remote desktop to guest machine', VagrantExternalCommandActor(
-        'rdp', TestSuiteActor.WindowsGuests, 'ad -- -g 90%')
-    ),
-])
+class VagrantSSHActor(VagrantCommandActor):
+    def __init__(self, *args, **kwargs):
+        super().__init__('ssh', None, *args, **kwargs)
+
+    def setup_parser(self, parser):
+        parser.add_argument(
+            'guest', type=str, choices=self.LinuxGuests
+        )
+
+        parser.add_argument(
+            'argv', nargs=argparse.REMAINDER,
+            help='Additional arguments passed to the SSH client'
+        )
+
+    def __call__(self, guest, argv):
+        self._exec_vagrant([guest], argv)
+
+
+class VagrantRDPActor(VagrantCommandActor):
+    def __init__(self, *args, **kwargs):
+        super().__init__('rdp', None, *args, **kwargs)
+
+    def setup_parser(self, parser):
+        parser.add_argument(
+            'guest', type=str, choices=self.WindowsGuests
+        )
+
+        parser.add_argument(
+            'argv', nargs=argparse.REMAINDER,
+            help='Additional arguments passed to the RDP client'
+        )
+
+    def __call__(self, guest, argv):
+        self._exec_vagrant([guest], argv)
+
+Commands = [
+    Command('status', 'Show current state of guest machines', VagrantStatusActor()),
+    Command('up', 'Bring up guest machines', VagrantUpActor()),
+    Command('halt', 'Halt guest machines', VagrantHaltActor()),
+    Command('destroy', 'Destroy guest machines', VagrantDestroyActor()),
+    Command('reload', 'Restarts guest machines', VagrantReloadActor()),
+    Command('resume', 'Resume suspended guest machines', VagrantResumeActor()),
+    Command('suspend', 'Suspends guest machines', VagrantSuspendActor()),
+    Command('ssh', 'Open SSH to guest machine', VagrantSSHActor()),
+    Command('rdp', 'Open remote desktop to guest machine', VagrantRDPActor()),
+]

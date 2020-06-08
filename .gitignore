@@ -1,6 +1,7 @@
 .project
 .settings
 .pydevproject
+.vscode/
 .vagrant/
 config.json
 boxes/*
