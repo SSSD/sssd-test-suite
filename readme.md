@@ -25,13 +25,32 @@ a directory that will hold the `sssd-test-suite` libvirt's pool. The directory
 should be on a large file system to hold all virtual machines. The directory
 must not be a existing pool.
 
+### Cloning repository and installing CLI dependencies
+
+This project depends on multiple Python dependencies listed in
+[`requirements.txt`](./requirements.txt) and
+[`Ansible`](https://www.ansible.com).
+
+You can use these commands to install the dependencies on Fedora:
+
+```console
+$ git clone https://github.com/SSSD/sssd-test-suite.git
+$ sudo dnf install ansible
+$ sudo pip3 install -r ./requirements.txt
+```
+
+There are number of other dependencies that are installed automatically using
+`sssd-test-suite provision host` command. You can see these dependencies
+[here](./provision/roles/host/tasks/generic.yml).
+
 ### I want to try SSSD with FreeIPA
 
 ```bash
 $ POOL_DIR=/path/to/sssd/test/suite/pool
 $ git clone https://github.com/SSSD/sssd-test-suite.git
 $ cd sssd-test-suite
-$ ./install-cli-deps.sh
+$ sudo dnf install ansible
+$ sudo pip3 install -r ./requirements.txt
 $ ./sssd-test-suite provision host --pool "$POOL_DIR"
 $ cp ./configs/sssd-f30.json config.json
 $ ./sssd-test-suite up client ipa && ./sssd-test-suite provision enroll client ipa
@@ -48,7 +67,8 @@ Now you can:
 $ POOL_DIR=/path/to/sssd/test/suite/pool
 $ git clone https://github.com/SSSD/sssd-test-suite.git
 $ cd sssd-test-suite
-$ ./install-cli-deps.sh
+$ sudo dnf install ansible
+$ sudo pip3 install -r ./requirements.txt
 $ ./sssd-test-suite provision host --pool "$POOL_DIR"
 $ cp ./configs/sssd-f30.json config.json
 $ ./sssd-test-suite up client ldap && ./sssd-test-suite provision enroll client ldap
@@ -66,7 +86,8 @@ Now you can:
 $ POOL_DIR=/path/to/sssd/test/suite/pool
 $ git clone https://github.com/SSSD/sssd-test-suite.git
 $ cd sssd-test-suite
-$ ./install-cli-deps.sh
+$ sudo dnf install ansible
+$ sudo pip3 install -r ./requirements.txt
 $ ./sssd-test-suite provision host --pool "$POOL_DIR"
 $ cp ./configs/sssd-f30.json config.json
 $ ./sssd-test-suite up client ad && ./sssd-test-suite provision enroll client ad
@@ -82,7 +103,8 @@ Now you can:
 $ POOL_DIR=/path/to/sssd/test/suite/pool
 $ git clone https://github.com/SSSD/sssd-test-suite.git
 $ cd sssd-test-suite
-$ ./install-cli-deps.sh
+$ sudo dnf install ansible
+$ sudo pip3 install -r ./requirements.txt
 $ ./sssd-test-suite provision host --pool "$POOL_DIR"
 $ cp ./configs/sssd-f30.json config.json
 $ ./sssd-test-suite up -s && ./sssd-test-suite provision guest && ./sssd-test-suite provision enroll
@@ -97,4 +119,3 @@ Now you can:
 * open ipa web interface at `https://master.ipa.vm`
 * access LDAP server at `ldap://master.ldap.vm`
 * load example data to the server with `./sssd-test-suite provision ldap --clear ./provision/ldif/basic.ldif`
-

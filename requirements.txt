@@ -1,0 +1,6 @@
+argcomplete
+clint
+colorama
+pyyaml
+requests
+requests-toolbelt
