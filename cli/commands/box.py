@@ -26,6 +26,8 @@ import re
 import subprocess
 import textwrap
 import nutcli
+import types
+import os
 
 from nutcli.commands import Command, CommandParser, CommandGroup
 from nutcli.parser import UniqueAppendAction
@@ -36,22 +38,84 @@ from commands.provision import ProvisionGuestsActor
 from util.actor import TestSuiteActor
 
 
-class BoxInfo:
-    def __init__(self, guest, root_dir, kwargs):
-        now = datetime.date.today()
-
-        self.guest = guest
-        self.version = now.strftime(f'%Y%m%d.{kwargs["version"]}')
-        self.os = kwargs['linux'] if guest in TestSuiteActor.LinuxGuests else kwargs['windows']
-        self.name = f'sssd-{self.os}-{self.guest}-{self.version}'
-        self.boxfile = f'{self.name}.box'
-        self.metafile = f'{self.name}.json'
-        self.imagepath = f'{root_dir}/pool/sssd-test-suite_{guest}.img'
+class VagrantBox(object):
+    def __init__(
+        self, actor, guest, project_dir,
+        argv, version, linux, windows, output_dir
+    ):
+        self.actor = actor
+        self.shell = actor.shell
+        self.logger = actor.logger
+        self.project_dir = project_dir
 
         if guest in TestSuiteActor.LinuxGuests:
-            self.vagrantfile = f'{root_dir}/boxes/vagrant-files/linux.vagrantfile'
+            self.os = linux
+            self.vagrant_file = f'{project_dir}/boxes/vagrant-files/linux'
         else:
-            self.vagrantfile = f'{root_dir}/boxes/vagrant-files/windows.vagrantfile'
+            self.os = windows
+            self.vagrant_file = f'{project_dir}/boxes/vagrant-files/windows'
+
+        self.guest = guest
+        self.version = datetime.date.today().strftime(f'%Y%m%d.{version}')
+        self.box_name = f'sssd-{self.os}-{self.guest}-{self.version}.box'
+        self.image_path = f'{project_dir}/pool/sssd-test-suite_{guest}.img'
+        self.output_dir = output_dir
+        self.argv = argv
+
+    def _make_readable(self):
+        self.shell(f'sudo chmod a+r {self.image_path}')
+
+    def _zero_disk(self):
+        ProvisionGuestActor(parent=self.actor)(
+            guests=[self.guest],
+            argv=self.argv,
+            playbook=f'{self.project_dir}/provision/prepare-box.yml'
+        )
+
+    def _compress_image(self):
+        self.shell(f'mv -f "{self.image_path}" "{self.image_path}.bak"')
+        self.shell(f'qemu-img convert -O qcow2 "{self.image_path}.bak" "{self.image_path}"')
+        self.shell(f'rm -f "{self.image_path}.bak"')
+
+    def _package_box(self, task):
+        self.shell(['mkdir', '-p', self.output_dir])
+
+        VagrantPackageActor(parent=self.actor)(
+            guests=[self.guest],
+            argv=['--vagrantfile', self.vagrant_file, '--output', self.box_name]
+        )
+
+        self.shell(f'mv -f "{self.box_name}" {self.output_dir}/')
+        task.info(f'Box stored at {self.output_dir}/{self.box_name}')
+
+    def get_tasklist(self):
+        return TaskList(
+            tag=self.guest,
+            name=f'Creating {self.guest}',
+            logger=self.logger
+        )([
+            Task('Make image readable', taskarg=False)(
+                self._make_readable
+            ),
+            Task('Start guest', taskarg=False)(
+                VagrantUpActor(parent=self.actor), [self.guest]
+            ),
+            Task('Zero out empty space on disk', taskarg=False)(
+                self._zero_disk
+            ),
+            Task('Halt guest', taskarg=False)(
+                VagrantHaltActor(parent=self.actor), [self.guest]
+            ),
+            Task('Compress image', taskarg=False)(
+                self._compress_image
+            ),
+            Task('Package box', taskarg=True)(
+                self._package_box
+            ),
+        ])
+
+    def get_output_path(self):
+        return f'{self.output_dir}/{self.box_name}'
 
 
 class CreateBoxActor(TestSuiteActor):
@@ -71,13 +135,7 @@ class CreateBoxActor(TestSuiteActor):
         )
 
         parser.add_argument(
-            '-u', '--url', action='store', type=str, dest='url',
-            help='URL where the resulting boxes will be available',
-            default='http://'
-        )
-
-        parser.add_argument(
-            '-o', '--output', action='store', type=str, dest='output',
+            '-o', '--output', action='store', type=str, dest='output_dir',
             help='Output directory where new boxes will '
                  'be stored (Default "{}/boxes").'.format(self.vagrant_dir),
             default='{}/boxes'.format(self.vagrant_dir)
@@ -87,11 +145,6 @@ class CreateBoxActor(TestSuiteActor):
             '-v', '--version', action='store', type=str, dest='version',
             help='Version number appended to current date (default = 01).',
             default='01'
-        )
-
-        parser.add_argument(
-            '--metadata', action='store_true', dest='metadata',
-            help='Create vagrant metadata for new boxes.'
         )
 
         parser.add_argument(
@@ -136,133 +189,98 @@ class CreateBoxActor(TestSuiteActor):
         Creating new boxes takes some time, so be patient.
         ''')
 
-    def __call__(self, **kwargs):
-        if 'all' in kwargs['guests']:
-            kwargs['guests'] = self.AllGuests
+    def __call__(
+        self,
+        linux,
+        windows,
+        output_dir,
+        version,
+        scratch,
+        update,
+        sequence,
+        guests,
+        argv
+    ):
+        guests = guests if 'all' not in guests else self.AllGuests
+        guests.sort()
 
-        boxinfo_list = []
-        for guest in kwargs['guests']:
-            boxinfo_list.append(BoxInfo(guest, self.vagrant_dir, kwargs))
+        boxes = [VagrantBox(
+            self, guest, self.project_dir, argv, version, linux, windows, output_dir
+        ) for guest in guests]
 
         TaskList('Create Boxes', logger=self.logger)([
-            TaskList(name='Provision', enabled=kwargs['scratch'])([
+            TaskList(name='Provision from scratch', enabled=scratch)([
                 Task('Destroy guests', taskarg=False)(
-                    VagrantDestroyActor(parent=self), kwargs['guests'], kwargs['sequence']
+                    VagrantDestroyActor(parent=self), guests, sequence
                 ),
-                Task('Update boxes', enabled=kwargs['update'], taskarg=False)(
-                    VagrantUpdateActor(parent=self), kwargs['guests'], kwargs['sequence']
+                Task('Update boxes', enabled=update, taskarg=False)(
+                    VagrantUpdateActor(parent=self), guests, sequence
                 ),
                 Task('Bring up guests', taskarg=False)(
-                    VagrantUpActor(parent=self), kwargs['guests'], kwargs['sequence']
+                    VagrantUpActor(parent=self), guests, sequence
                 ),
                 Task('Provision guests', taskarg=False)(
-                    ProvisionGuestsActor(parent=self), kwargs['guests'], kwargs['argv']
+                    ProvisionGuestsActor(parent=self), guests, argv=argv
                 ),
             ]),
-            Task('Make all images readable', taskarg=False)(
-                self.make_readable, boxinfo_list
-            ),
-            Task('Halt guests', taskarg=False)(
-                VagrantHaltActor(parent=self), kwargs['guests'], kwargs['sequence']
-            ),
-            Task('Zero out empty space')(
-                self.zero_disks, boxinfo_list, kwargs['argv']
-            ),
-            Task('Create boxes')(
-                self.create_boxes, boxes, kwargs['output']
-            ),
-            Task('Create metadata', enabled=kwargs['metadata'])(
-                self.create_metadata, boxes, kwargs['output'], kwargs['url']
-            ),
-            Task('Finish')(
-                self.finish, boxes, kwargs['output']
-            ),
+            *[box.get_tasklist() for box in boxes],
+            Task('Output information')(self.display_output, boxes)
         ]).execute()
 
-    def make_readable(self, boxinfo_list):
-        for box in boxinfo_list:
-            self.shell(f'sudo chmod a+r {box.imagepath}')
+    def display_output(self, task, boxes):
+        for box in boxes:
+            task.info(f'Box written: {box.get_output_path()}')
 
-    def zero_disks(self, task, boxinfo_list, argv):
-        """
-            Zeroing disks takes lots of space because it needs to fill the
-            whole space in the sparse file. Therefore it is better to do
-            it one guest after another.
-        """
 
-        for box in boxinfo_list:
-            task.info(f'[{box.guest}] Starting guest')
-            VagrantUpActor(parent=self)([box.guest])
+class CreateMetadataActor(TestSuiteActor):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-            task.info(f'[{box.guest}] Zeroing empty space')
-            ProvisionGuestActor(parent=self)(
-                guests=[box.guest],
-                argv=argv,
-                playbook=f'{self.ansible_dir}/prepare-box.yml')
+    def setup_parser(self, parser):
+        parser.add_argument(
+            '-u', '--url', action='store', type=str, dest='url',
+            help='URL where the box is available', default='http://'
+        )
 
-            task.info(f'[{box.guest}] Halting guest')
-            VagrantHaltActor(parent=self)([box.guest])
+        parser.add_argument(
+            '-o', '--output', action='store', type=str, dest='output',
+            help='Output metadata file name (Default: $boxpath/$boxname.json)',
+        )
 
-            task.info(f'[{box.guest}] Compressing image')
-            self.shell('mv -f "{0}" "{0}.bak"'.format(box.imagepath))
-            self.shell('qemu-img convert -O qcow2 "{0}.bak" "{0}"'.format(box.imagepath))
-            self.shell('rm -f "{}.bak"'.format(box.imagepath))
+        parser.add_argument(
+            '-p', '--print', action='store_true', dest='print_content',
+            help='Print metadata to stdout instead of writing it to file',
+        )
 
-    def create_boxes(self, task, boxinfo_list, outdir):
-        self.shell(['mkdir', '-p', outdir])
+        parser.add_argument(
+            'box', help='Vagrant box file.'
+        )
 
-        for box in boxinfo_list:
-            VagrantPackageActor(parent=self)(
-                guests=[box.guest],
-                argv=['--vagrantfile', box.vagrantfile, '--output', box.boxfile]
-            )
+    def __call__(self, url, output, box, print_content):
+        outfile = output
+        if outfile is None:
+            outfile = f'{os.path.splitext(box)[0]}.json'
 
-            self.shell(f'mv -f "{box.boxfile}" {outdir}/')
-            task.info(f'[{box.guest}] Box stored at {outdir}/{box.boxfile}')
+        box_name = os.path.splitext(os.path.basename(box))[0]
 
-    @nutcli.decorators.SideEffect()
-    def create_metadata(self, task, boxinfo_list, outdir, url):
-        for box in boxinfo_list:
-            task.step('Computing checksum', box.guest)
+        (box_os, box_guest, box_version) = re.findall(
+            r'sssd-(.*)-(.*)-(.*)', box_name
+        )[0]
 
-            sha = self.checksum(f'{outdir}/{box.boxfile}')
-            meta = textwrap.dedent('''
-            {{
-                "name": "sssd-{os}-{guest}",
-                "description": "SSSD Test Suite '{os}' {guest}",
-                "versions": [
-                    {{
-                        "version": "{version}",
-                        "status": "active",
-                        "providers": [
-                            {{
-                                "name": "libvirt",
-                                "url": "{url}/sssd-{os}-{guest}-{version}.box",
-                                "checksum_type": "sha256",
-                                "checksum": "{sha}"
-                            }}
-                        ]
-                    }}
-                ]
-            }}
-            ''')
+        checksum = self.compute_checksum(box)
+        content = self.get_metadata(
+            url, outfile, box_os, box_guest, box_version, checksum
+        )
 
-            meta = meta.format({
-                'os': box.os,
-                'guest': box.guest,
-                'version': box.version,
-                'url': url,
-                'sha': sha
-            }).strip()
+        if print_content:
+            print(content)
+            return 0
 
-            with open(f'{outdir}/{box.metafile}', "w") as f:
-                f.write(meta)
+        self.write_metadata(outfile, content)
+        return 0
 
-    def finish(self, task, boxinfo_list, outdir):
-        for box in boxinfo_list:
-            task.info(f'Box written: {outdir}/{boxfile}')
 
-    def checksum(self, path, block_size=65536):
+    def compute_checksum(self, path, block_size=65536):
         sha256 = hashlib.sha256()
         with open(path, 'rb') as f:
             for block in iter(lambda: f.read(block_size), b''):
@@ -270,9 +288,43 @@ class CreateBoxActor(TestSuiteActor):
 
         return sha256.hexdigest()
 
+    def get_metadata(self, url, outfile, os, guest, version, checksum):
+        return textwrap.dedent('''
+        {{
+            "name": "sssd-{os}-{guest}",
+            "description": "SSSD Test Suite '{os}' {guest}",
+            "versions": [
+                {{
+                    "version": "{version}",
+                    "status": "active",
+                    "providers": [
+                        {{
+                            "name": "libvirt",
+                            "url": "{url}/sssd-{os}-{guest}-{version}.box",
+                            "checksum_type": "sha256",
+                            "checksum": "{checksum}"
+                        }}
+                    ]
+                }}
+            ]
+        }}
+        ''').strip().format(
+            os=os,
+            guest=guest,
+            version=version,
+            url=url,
+            checksum=checksum
+        )
+
+    @nutcli.decorators.SideEffect()
+    def write_metadata(self, outfile, content):
+        with open(outfile, "w") as f:
+            f.write(content)
+
 
 Commands = Command('box', 'Update and create boxes', CommandParser()([
     Command('update', 'Update vagrant box', VagrantUpdateActor()),
     Command('prune', 'Delete all outdated vagrant boxes', VagrantPruneActor()),
     Command('create', 'Create new vagrant box', CreateBoxActor()),
+    Command('metadata', 'Create box metadata', CreateMetadataActor()),
 ]))

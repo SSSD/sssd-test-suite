@@ -122,10 +122,11 @@ class ProvisionGuestsActor(AnsibleActor):
 
     def __call__(self, guests, playbook=None, argv=None):
         guests = guests if 'all' not in guests else ['all']
-        self._exec_ansible(
-            f'{self.ansible_dir}/prepare-guests.yml',
-            unattended=True, limit=guests, argv=argv
-        )
+
+        if playbook is None:
+            playbook = f'{self.ansible_dir}/prepare-guests.yml'
+
+        self._exec_ansible(playbook, unattended=True, limit=guests, argv=argv)
 
 
 class EnrollActor(AnsibleActor):

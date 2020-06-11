@@ -31,10 +31,12 @@ class TestSuiteActor(nutcli.commands.Actor):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        self.project_dir = os.path.abspath(
+            os.path.dirname(os.path.realpath(__file__)) + '/../..'
+        )
+
         self.ansible_dir = os.path.abspath(
             os.path.dirname(os.path.realpath(__file__)) + '/../../provision'
         )
 
-        self.vagrant_dir = os.path.abspath(
-            os.path.dirname(os.path.realpath(__file__)) + '/../..'
-        )
+        self.vagrant_dir = self.project_dir
