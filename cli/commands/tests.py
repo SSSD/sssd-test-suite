@@ -33,16 +33,238 @@ from commands.vagrant import VagrantUpActor, VagrantHaltActor, VagrantDestroyAct
 from util.actor import TestSuiteActor
 
 
+class TestCase(object):
+    def __init__(
+        self, actor, sssd_dir, artifacts_dir, case_dir, destroy_guests,
+        name, guests, tasks, artifacts, timeout):
+        self.actor = actor
+        self.sssd_dir = sssd_dir
+        self.artifacts_dir = artifacts_dir
+        self.destroy_guests = destroy_guests
+        self.case_dir = case_dir
+
+        self.name = name
+        self.guests = guests if guests else ['client']
+        self.tasks = tasks
+        self.artifacts = artifacts
+        self.timeout = timeout
+
+    def get_tasks(self):
+        case_tasks = []
+        for task in self.tasks:
+            artifacts = TestArtifacts(
+                self.actor,
+                self.case_dir,
+                task.get('run-on', self.guests[0]),
+                task.get('artifacts', [])
+            )
+
+            case_tasks.append(Task(
+                name=task.get('name', None),
+                taskarg=False
+            )(
+                TestCaseTask(
+                    self.actor,
+                    self.case_dir,
+                    task.get('run-on', self.guests[0]),
+                    task.get('shell', 'exit 0'),
+                    artifacts,
+                    task.get('directory', '/shared/sssd'),
+                    task.get('timeout', None)
+                ).execute
+            ))
+
+        return case_tasks
+
+    def get_tasklist(self):
+        artifacts = TestArtifacts(
+            self.actor,
+            self.case_dir,
+            self.guests[0],
+            self.artifacts
+        )
+
+        upshell = nutcli.shell.Shell(env={
+            'SSSD_TEST_SUITE_RSYNC': f'{self.sssd_dir}:/shared/sssd',
+            'SSSD_TEST_SUITE_SSHFS':
+                f'{self.artifacts_dir}:/shared/artifacts'
+                + f' {self.case_dir}:/shared/commands'
+        })
+
+        return TaskList(
+            name=self.name,
+            logger=self.actor.logger,
+            timeout=self.timeout
+        )([
+            Task(
+                name=f'Destroying guests: {self.guests}',
+                enabled=self.destroy_guests,
+                taskarg=False
+            )(
+                VagrantDestroyActor(parent=self.actor), self.guests
+            ),
+            Task(
+                name=f'Halting guests: {self.guests}',
+                enabled=not self.destroy_guests,
+                taskarg=False
+            )(
+                VagrantHaltActor(parent=self.actor), self.guests
+            ),
+            Task(
+                name=f'Starting guests: {self.guests}',
+                taskarg=False
+            )(
+                VagrantUpActor(parent=self.actor, shell=upshell), self.guests
+            ),
+            *self.get_tasks(),
+            Task(
+                name=f'Archive artifacts',
+                taskarg=False
+            )(
+                artifacts.archive
+            ),
+            Task(
+                name=f'Halting guests: {self.guests}',
+                always=True,
+                taskarg=False
+            )(
+                VagrantHaltActor(parent=self.actor), self.guests
+            ),
+        ])
+
+
+class TestCommand(object):
+    def __init__(self, actor, case_dir, cwd=None, timeout=None):
+        self.actor = actor
+        self.case_dir = case_dir
+        self.cwd = cwd
+        self.timeout = timeout
+
+    def run_command(self, guest, command):
+        with tempfile.NamedTemporaryFile(dir=self.case_dir) as f:
+            if self.cwd is not None:
+                self._change_directory(f, self.cwd)
+
+            f.write(command.encode('utf-8'))
+            f.flush()
+            os.fchmod(f.fileno(), 0o755)
+
+            @nutcli.decorators.Timeout(timeout=self.timeout)
+            def run():
+                VagrantSSHActor(parent=self.actor)(
+                    guest=guest,
+                    argv=[f'/shared/commands/{os.path.basename(f.name)}']
+                )
+
+            run()
+
+    def _change_directory(self, f, dest):
+        f.write(textwrap.dedent(
+        f'''
+        cd {dest} || (echo "Unable to change to directory {dest}"; exit 255)
+
+        ''').encode('utf-8'))
+
+
+class TestCaseTask(TestCommand):
+    def __init__(
+        self, actor, case_dir,
+        guest, command, artifacts=None, cwd=None, timeout=None
+    ):
+        super().__init__(actor, case_dir, cwd, timeout)
+
+        self.guest = guest
+        self.command = command
+        self.artifacts = artifacts
+
+    def execute(self):
+        try:
+            self.run_command(self.guest, self.command)
+        finally:
+            self.artifacts.archive()
+
+
+class TestArtifacts(TestCommand):
+    def __init__(self, actor, case_dir, default_guest, artifacts, cwd=None):
+        super().__init__(actor, case_dir, cwd, timeout=None)
+
+        self.default_guest = default_guest
+        self.artifacts = artifacts
+
+        '''
+        artifacts: (optional)
+        - list of paths (guest is client or machines[0])
+        - from: guest
+          files:
+          - list of files
+        '''
+
+    def get_files_map(self):
+        def get_guest_list(d, guest):
+            if guest not in d:
+                d[guest] = []
+
+            return d[guest]
+
+        files_map = {}
+        for item in self.artifacts:
+            if type(item) == dict: # {'from': guest, 'files': [files]}
+                files_list = get_guest_list(
+                    files_map, item.get('from', self.default_guest)
+                )
+                files_list.extend(item)
+            else: # [files]
+                files_list = get_guest_list(files_map, self.default_guest)
+                files_list.append(item)
+
+        return files_map
+
+    def archive(self):
+        for guest, files in self.get_files_map().items():
+            copy = [
+                f'cp -fr {f} /shared/artifacts/ &> /dev/null'
+                + f'|| echo "> Unable to archive {f}"'
+                for f in files
+            ]
+
+            self.run_command(guest, '\n'.join(copy))
+
+
 class RunTestsActor(TestSuiteActor):
+    """
+    Test Suite YAML Format:
+
+    - name: Test Case Name
+      machines:
+      - list of machines to start
+      tasks:
+      - name: Task Name (optional)
+        run-on: guest (optional, defaults to client or machines[0])
+        directory: working directory (optional, default to /shared/sssd)
+        shell: pwd
+        timeout: timeout (optional
+        artifacts: (optional)
+        - list of paths (guest is client or machines[0])
+        - from: guest
+          files:
+          - list of files
+      timeout: timeout (optional)
+      artifacts: (optional)
+      - list of paths (guest is client or machines[0])
+      - from: guest
+        files:
+        - list of files
+    """
+
     def setup_parser(self, parser):
         parser.add_argument(
-            '-s', '--sssd', action='store', type=str, dest='sssd',
+            '-s', '--sssd', action='store', type=str, dest='sssd_dir',
             help='Path to SSSD source directory.',
             required=True
         )
 
         parser.add_argument(
-            '-a', '--artifacts', action='store', type=str, dest='artifacts',
+            '-a', '--artifacts', action='store', type=str, dest='artifacts_dir',
             help='Path to directory where tests artifacts will be stored.',
             required=True,
         )
@@ -58,7 +280,7 @@ class RunTestsActor(TestSuiteActor):
         )
 
         parser.add_argument(
-            '-t', '--test-config', action='store', type=str, dest='test_config',
+            '-t', '--test-config', action='store', type=str, dest='suite',
             help='Path to test suite yaml configuration.'
         )
 
@@ -73,198 +295,60 @@ class RunTestsActor(TestSuiteActor):
         $sssd/contrib/test-suite/test-suite.yml is used.
         ''')
 
-    def __call__(self, **kwargs):
-        suite = self.load_test_suite(kwargs['test_config'], kwargs['sssd'])
-        self.prepare_environment(suite, kwargs['update'], kwargs['prune'], kwargs['artifacts'])
-        self.run_test_suite(suite, kwargs)
+    def __call__(self, sssd_dir, artifacts_dir, update, prune, suite, destroy):
+        suite = self.load_test_suite(suite, sssd_dir)
 
-    """
-    - name: Test Case Name
-      machines:
-      - list of machines to start
-      tasks:
-      - name: Task Name (optional)
-        run-on: guest (optional, defaults to client or machines[0])
-        directory: working directory (optional, default to /shared/sssd)
-        shell: pwd
-        artifacts: (optional)
-        - list of paths (guest is client or machines[0])
-        - from: guest
-          files:
-          - list of files
-      artifacts: (optional)
-      - list of paths (guest is client or machines[0])
-      - from: guest
-        files:
-        - list of files
-    """
+        required_guests = set()
+        for case in suite:
+            required_guests.update(case.get('machines', []))
+        required_guests = list(required_guests)
+
+        tasks = TaskList('tesẗ́-suite', logger=self.logger)([
+            TaskList(
+                tag='preparation',
+                name='Preparation',
+                logger=self.logger
+            )([
+                Task('Creating artifacts directory', taskarg=False)(
+                    lambda: self.shell(['mkdir', '-p', artifacts_dir])
+                ),
+                Task('Updating boxes', enabled=update, taskarg=False)(
+                    VagrantUpdateActor(parent=self), guests=required_guests
+                ),
+                Task('Removing outdated boxes', enabled=prune, taskarg=False)(
+                    VagrantPruneActor(parent=self), force=True
+                )
+            ])
+        ])
+
+        with tempfile.TemporaryDirectory() as case_dir:
+            for case in suite:
+                test_case = TestCase(
+                    actor=self,
+                    sssd_dir=sssd_dir,
+                    artifacts_dir=artifacts_dir,
+                    case_dir=case_dir,
+                    destroy_guests=destroy,
+                    name=case.get('name', None),
+                    guests=case.get('machines', ['client']),
+                    tasks=case.get('tasks', []),
+                    artifacts=case.get('artifacts', []),
+                    timeout=case.get('timeout', None)
+                )
+
+                tasks.append(test_case.get_tasklist())
+
+            tasks.execute()
+
+        return 0
+
+
     def load_test_suite(self, config, sssd):
         if config is None:
             config = f'{sssd}/contrib/test-suite/test-suite.yml'
 
         with open(config) as f:
             return yaml.safe_load(f)
-
-    def prepare_environment(self, suite, update, prune, artifacts_dir):
-        required_guests = set()
-        for case in suite:
-            required_guests.update(case.get('machines', []))
-        guests = list(required_guests)
-
-        TaskList('Preparation', logger=self.logger)([
-            Task('Creating artifacts directory', taskarg=False)(
-                lambda: self.shell(['mkdir', '-p', artifacts_dir])
-            ),
-            Task('Updating boxes', enabled=update, taskarg=False)(
-                VagrantUpdateActor(parent=self), guests=guests
-            ),
-            Task('Removing outdated boxes', enabled=prune, taskarg=False)(
-                VagrantPruneActor(parent=self), force=True
-            )
-        ]).execute()
-
-    def run_command_on_guest(self, guest, command_directory, working_directory, command, timeout=None):
-        if not command:
-            return
-
-        with tempfile.NamedTemporaryFile(dir=command_directory) as f:
-            if working_directory:
-                f.write(
-                    'cd {dir} || (echo "Unable to change to directory {dir}"; exit 255)\n\n'.format(
-                        dir=working_directory
-                    ).encode('utf-8')
-                )
-
-            f.write(command.encode('utf-8'))
-            f.flush()
-
-            name = os.path.basename(f.name)
-            self.shell('chmod a+rx {}'.format(f.name))
-
-            @nutcli.decorators.Timeout(timeout=timeout)
-            def run():
-                VagrantSSHActor(parent=self)(
-                    guest=guest,
-                    argv=['/shared/commands/{}'.format(name)]
-                )
-
-            run()
-
-    def run_test_suite(self, suite, kwargs):
-        with tempfile.TemporaryDirectory() as command_directory:
-            TaskList('Test Case', logger=self.logger)([
-                Task(case['name'])(self.task_test_case, kwargs, command_directory, case) for case in suite
-            ]).execute()
-
-    def task_test_case(self, task, kwargs, command_directory, case):
-        args = types.SimpleNamespace(**kwargs)
-        guests = case['machines']
-        default_guest = 'client' if 'client' in guests else guests[0]
-        timeout = case.get('timeout', None)
-
-        tasks = TaskList(
-            f'Test Case: {case["name"]}',
-            logger=self.logger,
-            duration=True
-        )
-
-        if args.destroy:
-            tasks.append(
-                Task(f'Destroying guests: {guests}', taskarg=False)(
-                    VagrantDestroyActor(parent=self), guests
-                )
-            )
-        else:
-            # Guests needs to be restarted in order to mount directories.
-            tasks.append(
-                Task(f'Halting guests: {guests}', taskarg=False)(
-                    VagrantHaltActor(parent=self), guests
-                )
-            )
-
-        env = {
-            'SSSD_TEST_SUITE_RSYNC': '{}:/shared/sssd'.format(kwargs['sssd']),
-            'SSSD_TEST_SUITE_SSHFS': '{}:/shared/artifacts {}:/shared/commands'.format(
-                kwargs['artifacts'], command_directory
-            )
-        }
-        upshell = nutcli.shell.Shell(env=env)
-        tasks.append(
-            Task(f'Starting up guests: {guests}', taskarg=False)(
-                VagrantUpActor(parent=self, shell=upshell), guests
-            )
-        )
-
-        for step in case.get('tasks', []):
-            tasks.append(
-                Task(step.get('name', None))(
-                    self.task_test_case_step, command_directory, step, default_guest
-                )
-            )
-
-        tasks.append(
-            Task('Archive artifacts', always=True, taskarg=False)(
-                self.task_archive_artifacts, default_guest, command_directory, '/shared/sssd', case.get('artifacts', [])
-            )
-        )
-
-        tasks.append(
-            Task(f'Halting guests: {guests}', always=True, taskarg=False)(
-                VagrantHaltActor(parent=self), guests
-            )
-        )
-
-        tasks.execute(timeout=timeout)
-
-    def task_test_case_step(self, task, command_directory, step, default_guest):
-        working_directory = step.get('directory', '/shared/sssd')
-        guest = step.get('run-on', default_guest)
-        command = step.get('shell', 'exit 0')
-        timeout = step.get('timeout', None)
-
-        try:
-            self.run_command_on_guest(guest, command_directory, working_directory, command, timeout)
-        finally:
-            self.task_archive_artifacts(
-                guest, command_directory,
-                working_directory, step.get('artifacts', [])
-            )
-
-    def task_archive_artifacts(self, guest, command_directory, working_directory, artifacts):
-        def get_list(d, key):
-            if key not in d:
-                d[key] = []
-            return d[key]
-
-        paths = {}
-        for item in artifacts:
-            if type(item) == dict:
-                files = get_list(paths, item.get('from', guest))
-                for path in item.get('files', []):
-                    files.append(path)
-                continue
-
-            files = get_list(paths, guest)
-            files.append(item)
-
-        for guest, paths in paths.items():
-            commands = [
-                'cp -f {path} /shared/artifacts &> /dev/null || echo "> Unable to archive {path}"'.format(path=path)
-                for path in paths
-            ]
-            commands.append('exit 0')
-            self.run_command_on_guest(guest, command_directory, working_directory, '\n'.join(commands))
-
-    def task_up(self, task, config, guests, command_directory, sssd_directory, artifacts_directory):
-        env = {
-            'SSSD_TEST_SUITE_RSYNC': '{}:/shared/sssd'.format(sssd_directory),
-            'SSSD_TEST_SUITE_SSHFS': '{}:/shared/artifacts {}:/shared/commands'.format(
-                artifacts_directory, command_directory
-            )
-        }
-
-        for guest in guests:
-            self.vagrant(config, 'up', [guest], env=env, clear_env=True)
 
 
 Commands = [
