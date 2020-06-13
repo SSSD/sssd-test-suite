@@ -19,17 +19,16 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import subprocess
-import textwrap
-import nutcli.utils
 import argparse
+import textwrap
 
+import nutcli.utils
 from nutcli.commands import Command, CommandParser
 from nutcli.parser import UniqueAppendAction
 from nutcli.tasks import Task, TaskList
 
-from util.actor import TestSuiteActor
 from commands.vagrant import VagrantUpActor
+from util.actor import TestSuiteActor
 
 
 class AnsibleActor(TestSuiteActor):
@@ -105,7 +104,6 @@ class ProvisionGuestsActor(AnsibleActor):
             help='Guests to provision. '
                  'Multiple guests can be set. (Default "all")'
         )
-
 
         parser.add_argument(
             'argv', nargs=argparse.REMAINDER,
@@ -191,7 +189,6 @@ class EnrollActor(AnsibleActor):
                 self.enroll, guests, unattended, argv
             ),
         ]).execute()
-
 
     def enroll(self, guests, unattended, argv):
         if 'all' in guests:

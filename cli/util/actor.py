@@ -20,6 +20,7 @@
 #
 
 import os
+
 import nutcli
 
 

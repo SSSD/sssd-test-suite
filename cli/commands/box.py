@@ -22,19 +22,19 @@
 import argparse
 import datetime
 import hashlib
-import re
-import subprocess
-import textwrap
-import nutcli
-import types
 import os
+import re
+import textwrap
 
-from nutcli.commands import Command, CommandParser, CommandGroup
+import nutcli
+from nutcli.commands import Command, CommandParser
 from nutcli.parser import UniqueAppendAction
 from nutcli.tasks import Task, TaskList
 
-from commands.vagrant import VagrantUpdateActor, VagrantPruneActor, VagrantDestroyActor, VagrantHaltActor, VagrantUpActor, VagrantPackageActor
 from commands.provision import ProvisionGuestsActor
+from commands.vagrant import (VagrantDestroyActor, VagrantHaltActor,
+                              VagrantPackageActor, VagrantPruneActor,
+                              VagrantUpActor, VagrantUpdateActor)
 from util.actor import TestSuiteActor
 
 
@@ -66,7 +66,7 @@ class VagrantBox(object):
         self.shell(f'sudo chmod a+r {self.image_path}')
 
     def _zero_disk(self):
-        ProvisionGuestActor(parent=self.actor)(
+        ProvisionGuestsActor(parent=self.actor)(
             guests=[self.guest],
             argv=self.argv,
             playbook=f'{self.project_dir}/provision/prepare-box.yml'
@@ -278,7 +278,6 @@ class CreateMetadataActor(TestSuiteActor):
 
         self.write_metadata(outfile, content)
         return 0
-
 
     def compute_checksum(self, path, block_size=65536):
         sha256 = hashlib.sha256()

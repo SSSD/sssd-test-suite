@@ -19,11 +19,11 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import nutcli
 import argparse
 import os
 import re
 
+import nutcli
 from nutcli.commands import Command
 from nutcli.parser import UniqueAppendAction
 
@@ -61,8 +61,7 @@ class VagrantCommandActor(TestSuiteActor):
             config = self.cli_args.config
         else:
             config = os.environ.get(
-               'SSSD_TEST_SUITE_CONFIG',
-                self.vagrant_dir + '/config.json'
+               'SSSD_TEST_SUITE_CONFIG', self.vagrant_dir + '/config.json'
             )
 
         command = ['vagrant', *self.command.split(' '), *nutcli.utils.get_as_list(args)]
@@ -80,6 +79,7 @@ class VagrantCommandActor(TestSuiteActor):
 
     def __call__(self, guests, sequence=False, argv=None):
         argv = nutcli.utils.get_as_list(argv)
+
         def run_guest(guests, argv):
             try:
                 self._exec_vagrant(argv + guests)
@@ -228,6 +228,7 @@ class VagrantRDPActor(VagrantCommandActor):
 
     def __call__(self, guest, argv):
         self._exec_vagrant([guest], argv)
+
 
 Commands = [
     Command('status', 'Show current state of guest machines', VagrantStatusActor()),

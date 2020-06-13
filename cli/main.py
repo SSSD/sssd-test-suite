@@ -1,19 +1,19 @@
 #!/bin/python3
 # -*- coding: utf-8 -*-
 
-import argcomplete
 import argparse
 import sys
 import textwrap
+
+import argcomplete
 import nutcli.commands
 import nutcli.runner
 
-
-import commands.vagrant
-import commands.provision
-import commands.cloud
 import commands.box
+import commands.cloud
+import commands.provision
 import commands.tests
+import commands.vagrant
 
 
 class Program:
@@ -27,7 +27,6 @@ class Program:
             help='Path to SSSD Test Suite configuration file',
             default=None
         )
-
 
         parser.epilog = textwrap.dedent('''
         If --config option is not set the default configuration file is
@@ -56,12 +55,12 @@ class Program:
         return parser
 
     def main(self, argv):
-      parser = self.setup_parser()
-      runner = nutcli.runner.Runner('sssd-test-suite', parser).setup_parser()
+        parser = self.setup_parser()
+        runner = nutcli.runner.Runner('sssd-test-suite', parser).setup_parser()
 
-      args = runner.parse_args(argv)
-      runner.default_logger()
-      return runner.execute(args)
+        args = runner.parse_args(argv)
+        runner.default_logger()
+        return runner.execute(args)
 
 
 if __name__ == "__main__":

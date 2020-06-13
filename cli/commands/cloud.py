@@ -23,7 +23,7 @@ import json
 import re
 import textwrap
 
-from nutcli.commands import Command, CommandParser, CommandGroup
+from nutcli.commands import Command, CommandGroup, CommandParser
 from nutcli.parser import UniqueAppendAction
 from nutcli.tasks import Task, TaskList
 
@@ -144,8 +144,8 @@ class CloudUploadActor(CloudActor):
         tasks = TaskList('Upload Box', logger=self.logger)
         for box_file in boxes:
             info = self.get_box_info(box_file)
-            tasks.tasks.append(
-                Task(f'Creating box {info} ({version})'.format(**info))(
+            tasks.append(
+                Task('Creating box {name} ({version})'.format(**info))(
                     self.upload_task, api, box_file, info
                 )
             )

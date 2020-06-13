@@ -22,21 +22,23 @@
 import os
 import tempfile
 import textwrap
-import types
-import yaml
-import nutcli
 
+import nutcli
+import yaml
 from nutcli.commands import Command
 from nutcli.tasks import Task, TaskList
 
-from commands.vagrant import VagrantUpActor, VagrantHaltActor, VagrantDestroyActor, VagrantUpdateActor, VagrantPruneActor, VagrantSSHActor
+from commands.vagrant import (VagrantDestroyActor, VagrantHaltActor,
+                              VagrantPruneActor, VagrantSSHActor,
+                              VagrantUpActor, VagrantUpdateActor)
 from util.actor import TestSuiteActor
 
 
 class TestCase(object):
     def __init__(
         self, actor, sssd_dir, artifacts_dir, case_dir, destroy_guests,
-        name, guests, tasks, artifacts, timeout):
+        name, guests, tasks, artifacts, timeout
+    ):
         self.actor = actor
         self.sssd_dir = sssd_dir
         self.artifacts_dir = artifacts_dir
@@ -159,8 +161,7 @@ class TestCommand(object):
             run()
 
     def _change_directory(self, f, dest):
-        f.write(textwrap.dedent(
-        f'''
+        f.write(textwrap.dedent(f'''
         cd {dest} || (echo "Unable to change to directory {dest}"; exit 255)
 
         ''').encode('utf-8'))
@@ -208,12 +209,12 @@ class TestArtifacts(TestCommand):
 
         files_map = {}
         for item in self.artifacts:
-            if type(item) == dict: # {'from': guest, 'files': [files]}
+            if type(item) == dict:  # {'from': guest, 'files': [files]}
                 files_list = get_guest_list(
                     files_map, item.get('from', self.default_guest)
                 )
                 files_list.extend(item)
-            else: # [files]
+            else:  # [files]
                 files_list = get_guest_list(files_map, self.default_guest)
                 files_list.append(item)
 
@@ -341,7 +342,6 @@ class RunTestsActor(TestSuiteActor):
             tasks.execute()
 
         return 0
-
 
     def load_test_suite(self, config, sssd):
         if config is None:
