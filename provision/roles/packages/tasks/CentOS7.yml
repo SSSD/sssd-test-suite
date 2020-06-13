@@ -182,7 +182,7 @@
     - libtevent-debuginfo
   when: inventory_hostname == 'client' or inventory_hostname == 'ipa'
 
-# To work around https://github.com/psf/requests/issues/4160  
+# To work around https://github.com/psf/requests/issues/4160
 - name: Remove current python-requests code
   become: True
   file:
