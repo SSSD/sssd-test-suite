@@ -94,22 +94,22 @@ class VagrantBox(object):
             name=f'Creating {self.guest}',
             logger=self.logger
         )([
-            Task('Make image readable', taskarg=False)(
+            Task('Make image readable')(
                 self._make_readable
             ),
-            Task('Start guest', taskarg=False)(
+            Task('Start guest')(
                 VagrantUpActor(parent=self.actor), [self.guest]
             ),
-            Task('Zero out empty space on disk', taskarg=False)(
+            Task('Zero out empty space on disk')(
                 self._zero_disk
             ),
-            Task('Halt guest', taskarg=False)(
+            Task('Halt guest')(
                 VagrantHaltActor(parent=self.actor), [self.guest]
             ),
-            Task('Compress image', taskarg=False)(
+            Task('Compress image')(
                 self._compress_image
             ),
-            Task('Package box', taskarg=True)(
+            Task('Package box')(
                 self._package_box
             ),
         ])
@@ -210,16 +210,16 @@ class CreateBoxActor(TestSuiteActor):
 
         TaskList('Create Boxes', logger=self.logger)([
             TaskList(name='Provision from scratch', enabled=scratch)([
-                Task('Destroy guests', taskarg=False)(
+                Task('Destroy guests')(
                     VagrantDestroyActor(parent=self), guests, sequence
                 ),
-                Task('Update boxes', enabled=update, taskarg=False)(
+                Task('Update boxes', enabled=update)(
                     VagrantUpdateActor(parent=self), guests, sequence
                 ),
-                Task('Bring up guests', taskarg=False)(
+                Task('Bring up guests')(
                     VagrantUpActor(parent=self), guests, sequence
                 ),
-                Task('Provision guests', taskarg=False)(
+                Task('Provision guests')(
                     ProvisionGuestsActor(parent=self), guests, argv=argv
                 ),
             ]),
@@ -227,7 +227,7 @@ class CreateBoxActor(TestSuiteActor):
             Task('Output information')(self.display_output, boxes)
         ]).execute()
 
-    def display_output(self, task, boxes):
+    def display_output(self, boxes, task):
         for box in boxes:
             task.info(f'Box written: {box.get_output_path()}')
 

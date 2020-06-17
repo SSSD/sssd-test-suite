@@ -151,7 +151,7 @@ class CloudUploadActor(CloudActor):
             )
         tasks.execute()
 
-    def upload_task(self, task, api, box_file, info):
+    def upload_task(self, api, box_file, info):
         self.create_container(api, info)
         self.upload(api, info, box_file)
 

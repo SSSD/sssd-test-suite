@@ -62,8 +62,7 @@ class TestCase(object):
             )
 
             case_tasks.append(Task(
-                name=task.get('name', None),
-                taskarg=False
+                name=task.get('name', None)
             )(
                 TestCaseTask(
                     self.actor,
@@ -100,35 +99,30 @@ class TestCase(object):
         )([
             Task(
                 name=f'Destroying guests: {self.guests}',
-                enabled=self.destroy_guests,
-                taskarg=False
+                enabled=self.destroy_guests
             )(
                 VagrantDestroyActor(parent=self.actor), self.guests
             ),
             Task(
                 name=f'Halting guests: {self.guests}',
-                enabled=not self.destroy_guests,
-                taskarg=False
+                enabled=not self.destroy_guests
             )(
                 VagrantHaltActor(parent=self.actor), self.guests
             ),
             Task(
-                name=f'Starting guests: {self.guests}',
-                taskarg=False
+                name=f'Starting guests: {self.guests}'
             )(
                 VagrantUpActor(parent=self.actor, shell=upshell), self.guests
             ),
             *self.get_tasks(),
             Task(
-                name=f'Archive artifacts',
-                taskarg=False
+                name=f'Archive artifacts'
             )(
                 artifacts.archive
             ),
             Task(
                 name=f'Halting guests: {self.guests}',
-                always=True,
-                taskarg=False
+                always=True
             )(
                 VagrantHaltActor(parent=self.actor), self.guests
             ),
@@ -310,13 +304,13 @@ class RunTestsActor(TestSuiteActor):
                 name='Preparation',
                 logger=self.logger
             )([
-                Task('Creating artifacts directory', taskarg=False)(
+                Task('Creating artifacts directory')(
                     lambda: self.shell(['mkdir', '-p', artifacts_dir])
                 ),
-                Task('Updating boxes', enabled=update, taskarg=False)(
+                Task('Updating boxes', enabled=update)(
                     VagrantUpdateActor(parent=self), guests=required_guests
                 ),
-                Task('Removing outdated boxes', enabled=prune, taskarg=False)(
+                Task('Removing outdated boxes', enabled=prune)(
                     VagrantPruneActor(parent=self), force=True
                 )
             ])

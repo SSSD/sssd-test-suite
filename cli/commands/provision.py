@@ -182,10 +182,10 @@ class EnrollActor(AnsibleActor):
 
     def __call__(self, guests, sequence, unattended, argv):
         TaskList('enroll', logger=self.logger)([
-            Task('Start Guest Machines', taskarg=False)(
+            Task('Start Guest Machines')(
                 VagrantUpActor(parent=self), guests, sequence
             ),
-            Task('Enroll Machines', taskarg=False)(
+            Task('Enroll Machines')(
                 self.enroll, guests, unattended, argv
             ),
         ]).execute()
@@ -231,12 +231,12 @@ class ProvisionLDAPActor(TestSuiteActor):
 
         if clear:
             tasklist.tasks.append(
-                Task('Clear current content', taskarg=False)(self.clear)
+                Task('Clear current content')(self.clear)
             )
 
         for ldif in ldif:
             tasklist.tasks.append(
-                Task(f'Import {ldif}', taskarg=False)(self.import_ldif, ldif)
+                Task(f'Import {ldif}')(self.import_ldif, ldif)
             )
 
         tasklist.execute()
