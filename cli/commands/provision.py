@@ -246,7 +246,7 @@ class ProvisionLDAPActor(TestSuiteActor):
         LDAP_URI="ldap://192.168.100.20"
         BASE_DN="dc=ldap,dc=vm"
         BIND_DN="cn=Directory Manager"
-        BIND_PW="123456789"
+        BIND_PW="vagrant"
 
         FILTER="(&(objectClass=*)(!(cn=Directory Administrators)))"
         SEARCH=`ldapsearch -x -D "$BIND_DN" -w "$BIND_PW" -H "$LDAP_URI" -b "$BASE_DN" -s one "$FILTER"`
@@ -273,7 +273,7 @@ class ProvisionLDAPActor(TestSuiteActor):
         LDAP_URI="ldap://192.168.100.20"
         BASE_DN="dc=ldap,dc=vm"
         BIND_DN="cn=Directory Manager"
-        BIND_PW="123456789"
+        BIND_PW="vagrant"
 
         ldapadd -x -D "$BIND_DN" -w "$BIND_PW" -H "$LDAP_URI" -f "{ldif}"
         exit $?

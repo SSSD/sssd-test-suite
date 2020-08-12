@@ -20,7 +20,7 @@ See [Basic Usage](basic-usage.md) for more information.
 | Any Linux machine | vagrant                 | vagrant      | Local user        |
 | ad                | Administrator@ad.vm     | vagrant      | Domain user       |
 | ad-child          | Administrator@sub.ad.vm | vagrant      | Domain user       |
-| ipa               | admin                   | 123456789    | IPA administrator |
+| ipa               | admin                   | vagrant      | IPA administrator |
 
 ## Enrollment data
 

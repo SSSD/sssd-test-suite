@@ -23,7 +23,7 @@ objectClass: top
 objectClass: organizationalUnit
 ou: sudoers
 
-# User's password: 123456789
+# User's password: vagrant
 dn: cn=user-1,ou=users,dc=ldap,dc=vm
 objectClass: top
 objectClass: posixAccount
@@ -32,7 +32,7 @@ uid: user-1
 uidNumber: 10001
 gidNumber: 10001
 homeDirectory: /home/user-1
-userPassword: {SHA}98O8HYCOBHMq32eZZczDTKeuNEE=
+userPassword: {SHA}sD/piPjVW4fb0iI+4aijeg+ILW4=
 
 dn: cn=user-1,ou=posix_groups,dc=ldap,dc=vm
 objectClass: top
