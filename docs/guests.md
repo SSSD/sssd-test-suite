@@ -6,7 +6,7 @@ The `sssd-test-suite` creates the following guests machines:
 |--------------|-------------------|--------------------|-----------------------------------------------------------------|
 | ipa          | `192.168.100.10`  | `master.ipa.vm`    | IPA server                                                      |
 | ldap         | `192.168.100.20`  | `master.ldap.vm`   | TLS ready 389 Directory Server                                  |
-| client       | `192.168.100.30`  | `master.client.vm` | Client machine with configured SSSD                             |
+| client       | `192.168.100.30`  | `client.vm`        | Client machine with configured SSSD                             |
 | ad           | `192.168.100.110` | `root.ad.vm`       | Active Directory Forest root domain                             |
 | ad-child     | `192.168.100.120` | `child.sub.ad.vm`  | Active Directory child domain                                   |
 

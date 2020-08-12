@@ -29,7 +29,7 @@ machines = [
   Machine.new(
     name: "client",
     type: Machine::LINUX,
-    hostname: "master.client.vm",
+    hostname: "client.vm",
     ip: "192.168.100.30",
     config: config
   ),
