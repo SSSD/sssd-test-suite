@@ -70,5 +70,6 @@ run `./sssd-test-suite ssh client`.
 * Remove outdated boxes: `./sssd-test-suite prune`
 * SSH to client: `./sssd-test-suite ssh client`
 * RDP to ad: `./sssd-test-suite rdp ad -- -g 90%`
+* Renew AD License: `./sssd-test-suite provision rearm`
 
 See `./sssd-test-suite --help` for more commands.
