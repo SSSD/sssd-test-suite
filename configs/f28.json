@@ -1,12 +1,12 @@
 {
   "boxes": {
     "ad": {
-      "name": "peru/windows-server-2019-datacenter-x64-eval",
+      "name": "peru/windows-server-2019-standard-x64-eval",
       "url": "",
       "memory": 2048
     },
     "ad-child": {
-      "name": "peru/windows-server-2019-datacenter-x64-eval",
+      "name": "peru/windows-server-2019-standard-x64-eval",
       "url": "",
       "memory": 2048
     },
