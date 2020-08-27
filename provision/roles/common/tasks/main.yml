@@ -60,6 +60,27 @@
     line: 'AcceptEnv SSSD_TEST_SUITE_BASHRC'
   register: result
 
+- name: Set root password to 'vagrant'
+  become: False
+  shell: |
+    echo vagrant | su root -c exit
+    if [ $? -eq 0 ]; then
+      echo "Password is already set. Nothing to do."
+      exit 255
+    fi
+
+    echo vagrant | sudo passwd --stdin root
+  register: result
+  failed_when: "result.rc != 255 and result.rc != 0"
+  changed_when: "result.rc == 0"
+
+- name: Allow root access over SSH
+  become: True
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^PermitRootLogin (.*)$'
+    line: 'PermitRootLogin yes'
+
 - name: Reload sshd
   become: True
   service:

@@ -12,6 +12,7 @@
     - gdb
     - git
     - ldb-tools
+    - python-pip
     - python3-selinux
     - mc
     - network-manager

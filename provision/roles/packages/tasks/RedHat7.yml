@@ -22,6 +22,7 @@
     - ldb-tools
     - NetworkManager
     - openldap-clients
+    - python-pip
     - screen
     - systemtap
     - tig

@@ -58,6 +58,7 @@
     - ldb-tools
     - NetworkManager
     - openldap-clients
+    - python3-pip
     - rsync
     - screen
     - systemtap
