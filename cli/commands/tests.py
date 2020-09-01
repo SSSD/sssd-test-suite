@@ -82,7 +82,8 @@ class TestCase(object):
             self.actor,
             self.case_dir,
             self.guests[0],
-            self.artifacts
+            self.artifacts,
+            cwd='/shared/sssd'
         )
 
         upshell = nutcli.shell.Shell(env={
@@ -116,7 +117,8 @@ class TestCase(object):
             ),
             *self.get_tasks(),
             Task(
-                name=f'Archive artifacts'
+                name=f'Archive artifacts',
+                always=True
             )(
                 artifacts.archive
             ),
