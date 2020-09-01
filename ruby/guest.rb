@@ -7,7 +7,7 @@ class Guest
       this.vm.box = machine.box
       this.vm.box_url = machine.url
       this.vm.hostname = machine.hostname
-      this.vm.network "private_network", ip: machine.ip
+      this.vm.network "private_network", ip: machine.ip, libvirt__dhcp_enabled: false
 
       this.vm.provider :libvirt do |libvirt|
         libvirt.memory = machine.memory
