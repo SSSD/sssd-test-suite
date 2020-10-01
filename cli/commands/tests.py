@@ -300,7 +300,7 @@ class RunTestsActor(TestSuiteActor):
             required_guests.update(case.get('machines', []))
         required_guests = list(required_guests)
 
-        tasks = TaskList('tesẗ́-suite', logger=self.logger)([
+        tasks = TaskList('test-suite', logger=self.logger)([
             TaskList(
                 tag='preparation',
                 name='Preparation',
