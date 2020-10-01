@@ -41,7 +41,7 @@ $ sudo pip3 install -r ./requirements.txt
 
 There are number of other dependencies that are installed automatically using
 `sssd-test-suite provision host` command. You can see these dependencies
-[here](./provision/roles/host/tasks/generic.yml).
+[here](./provision/roles/host/tasks/Fedora.yml).
 
 ### I want to try SSSD with FreeIPA
 
