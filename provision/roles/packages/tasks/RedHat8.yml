@@ -44,6 +44,13 @@
   - { name: 'CRB', url: '{{ compose_url }}/CRB' }
   - { name: 'Buildroot', url: '{{ buildroot_url }}' }
 
+- name: Enable idm:DL1 module for IdM packages
+  become: True
+  shell: |
+    dnf module enable -y idm:DL1
+  args:
+    warn: false
+
 - name: Install common packages
   become: True
   yum:
