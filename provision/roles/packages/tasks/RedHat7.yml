@@ -151,6 +151,7 @@
     - python-requests
     - python-pip
     - python3-devel
+    - python3*-pytest
     - realmd
     - resolv_wrapper
     - samba-common-tools
