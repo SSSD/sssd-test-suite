@@ -61,7 +61,7 @@
     echo {{ ipa.password | quote }} | kinit admin
 
     ipa dnsrecord-show {{ item.zone | quote }} {{ item.name | quote }} |  grep {{ item.ip |  quote }}
-    if [ $? -ne 1 ]; then
+    if [ $? -eq 1 ]; then
       echo "Record {{ item.ip | quote }} in {{ item.name | quote }}.{{ item.zone | quote }} is not present. Nothing to do."
       exit 255
     fi
