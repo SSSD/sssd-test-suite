@@ -4,26 +4,10 @@
 
 - name: Install EPEL repository
   become: True
-  block:
-    - name: Install EPEL over HTTPS
-      yum:
-        state: present
-        name:
-        - 'https://dl.fedoraproject.org/pub/epel/epel-release-latest-{{ ansible_distribution_major_version }}.noarch.rpm'
-  rescue:
-    - name: Install EPEL over HTTP
-      yum:
-        state: present
-        name:
-        - 'http://dl.fedoraproject.org/pub/epel/epel-release-latest-{{ ansible_distribution_major_version }}.noarch.rpm'
-    - name: Change HTTPS to HTTP in EPEL repository
-      replace:
-        path: '{{ item }}'
-        regexp: 'https'
-        replace: 'http'
-      with_items:
-      - /etc/yum.repos.d/epel.repo
-      - /etc/yum.repos.d/epel-testing.repo
+  yum:
+    state: present
+    name:
+    - 'https://dl.fedoraproject.org/pub/epel/epel-release-latest-{{ ansible_distribution_major_version }}.noarch.rpm'
 
 - name: Remove default repositories
   become: True
