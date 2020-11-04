@@ -33,6 +33,7 @@
     - bash-completion
     - dbus
     - dnsmasq
+    - fuse-sshfs
     - gdb
     - git
     - ldb-tools
