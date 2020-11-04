@@ -22,6 +22,7 @@
 import argparse
 import os
 import re
+import sys
 
 import nutcli
 from nutcli.commands import Command
@@ -142,6 +143,14 @@ class VagrantSuspendActor(VagrantCommandActor):
 class VagrantUpdateActor(VagrantCommandActor):
     def __init__(self, *args, **kwargs):
         super().__init__('box update', None, *args, **kwargs)
+
+    def __call__(self, guests, sequence=False, argv=None):
+        argv = nutcli.utils.get_as_list(argv)
+
+        if not sys.stdout.isatty() and not '--no-tty' in argv:
+            argv.append('--no-tty')
+
+        return super().__call__(guests, sequence, argv)
 
 
 class VagrantPackageActor(VagrantCommandActor):
