@@ -309,6 +309,9 @@ class RunTestsActor(TestSuiteActor):
                 Task('Creating artifacts directory')(
                     lambda: self.shell(['mkdir', '-p', artifacts_dir])
                 ),
+                Task('Destroying guests to allow update', enabled=update)(
+                    VagrantDestroyActor(parent=self), guests=required_guests
+                ),
                 Task('Updating boxes', enabled=update)(
                     VagrantUpdateActor(parent=self), guests=required_guests
                 ),
