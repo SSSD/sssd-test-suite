@@ -25,6 +25,24 @@
       - /etc/yum.repos.d/epel.repo
       - /etc/yum.repos.d/epel-testing.repo
 
+- name: Remove default repositories
+  become: True
+  file:
+    path: /etc/yum.repos.d/rhel.repo
+    state: absent
+
+- name: Install additional repositories
+  become: True
+  template:
+    src: repo
+    dest: '/etc/yum.repos.d/{{ item.name }}.repo'
+    owner: root
+    group: root
+    mode: 0644
+  with_items:
+  - { name: 'rhel', url: '{{ compose_url }}/Server' }
+  - { name: 'rhel-opt', url: '{{ compose_url }}/Server-optional' }
+
 - name: Install common packages
   become: True
   yum:
