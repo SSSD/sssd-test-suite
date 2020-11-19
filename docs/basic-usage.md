@@ -2,21 +2,20 @@
 
 ## Preparing host machine
 
-The following commands will install necessary requirements for the
+The following command will install necessary requirements for the
 `sssd-test-suite` command line interface and will prepare the host
 machine so it is able to run and access the virtual machines.
 
-The following commands will:
+```bash
+$ ./sssd-test-suite provision host --pool $path-to-pool-directory
+```
+
+The command will:
 * Install ansible, libvirt, vagrant and other packages required by `sssd-test-suite`.
 * Install required vagrant plugins.
 * Configure NetworkManager's dnsmasq so all machines are resolvable through their DNS names.
 * Install `polkit` rule for `libvirt` that will allow anyone to use `libvirt` without root password.
 * Create libvirt's `sssd-test-suite` directory storage pool at `$path-to-pool-directory`
-
-```bash
-$ ./install-cli-deps.sh -y
-$ ./sssd-test-suite provision host --pool $path-to-pool-directory
-```
 
 ## Preparing guests machines
 
