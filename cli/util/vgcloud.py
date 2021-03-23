@@ -119,17 +119,18 @@ class VagrantCloud:
         self.api_error(r)
         return r
 
-    def api_put(self, endpoint, data, args=None, params=None, headers=None, isjson=True):
+    def api_put(self, endpoint, data, args=None, params=None, headers=None, isjson=True, anonymous=False):
         args = args if args is not None else {}
         params = params if params is not None else {}
         headers = headers if headers is not None else {}
 
         (data, type) = self.process_data(data, isjson)
+        auth = {} if anonymous else self.authheader
 
         r = requests.put(
             endpoint.format(**args, url=self.url),
             params=params,
-            headers={**self.authheader, **headers, **type},
+            headers={**auth, **headers, **type},
             data=data
         )
 
@@ -292,7 +293,10 @@ class VagrantCloud:
 
         monitor = MultipartEncoderMonitor(encoder, callback)
 
-        self.api_put(data['upload_path'], monitor, isjson=False, headers={
-            'Content-Type': monitor.content_type
-        })
+        self.api_put(
+            data['upload_path'], monitor, isjson=False, anonymous=True,
+            headers={
+                'Content-Type': monitor.content_type
+            }
+        )
         print('')
