@@ -55,6 +55,7 @@
     - docbook-xml
     - docbook-xsl
     - fakeroot
+    - faketime
     - freeipa-client
     - gettext
     - gnutls-bin
