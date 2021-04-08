@@ -105,6 +105,7 @@
     - libcollection-devel
     - libcurl-devel
     - libdhash-devel
+    - libfaketime
     - libini_config-devel
     - libldb
     - libldb-devel
@@ -186,6 +187,7 @@
     - krb5-workstation
     - lcov
     - libcmocka-devel
+    - libfaketime
     - mock
     - nss_wrapper
     - openldap-clients

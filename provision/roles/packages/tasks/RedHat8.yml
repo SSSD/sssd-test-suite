@@ -104,6 +104,7 @@
     - docbook-style-xsl
     - doxygen
     - fakeroot
+    - libfaketime
     - findutils
     - freeipa-client
     - gcc
@@ -192,6 +193,7 @@
     - krb5-server
     - krb5-workstation
     - libcmocka-devel
+    - libfaketime
     - mock
     - nss_wrapper
     - openldap-clients
