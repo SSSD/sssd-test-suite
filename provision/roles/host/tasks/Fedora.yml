@@ -52,6 +52,7 @@
 
     vagrant plugin install {{ plugin }}
   register: result
+  ignore_errors: yes
   failed_when: "result.rc != 255 and result.rc != 0"
   changed_when: "result.rc == 0"
   loop_control:
@@ -61,3 +62,25 @@
   - winrm-elevated
   - vagrant-libvirt
   - vagrant-sshfs
+
+- name: Vagrant plugin install failed
+  fail:
+    msg: |
+      "------------------------------------------------------------------------------------------------------"
+      "It looks like vagrant plugin installation failed."
+      "There may be many reasons for that, few are listed bellow:"
+      ""
+      "1) Frequent one is \"conflicting dependencies\" during vagrant plugin install."
+      "   Temporary workaround in this case is to disable vagrant plugin dependencies enforcement:"
+      "   $ VAGRANT_DISABLE_STRICT_DEPENDENCY_ENFORCEMENT=1 ./sssd-test-suite provision host --pool $VM_POOL"
+      ""
+      "2) In case vagrant has been updated recently please follow \"vagrant plugin install\" stdout suggestions:"
+      "   $ vagrant plugin repair"
+      "   $ vagrant plugin expunge --reinstall"
+      "   This can be combined with (1)"
+      ""
+      "3) Worst case scenario may reguire removal of .vagrant and .vagrant.d directories from project"
+      "   directory and user $HOME".
+      "------------------------------------------------------------------------------------------------------"
+  when: result is failed
+
