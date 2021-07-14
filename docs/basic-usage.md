@@ -36,6 +36,14 @@ $ ./sssd-test-suite provision enroll all
 
 Now you are ready to use the guests.
 
+You may need to change the `domains` section in sssd.conf to be `ipa.vm` or
+`ad.vm` etc.
+
+```bash
+$ grep 'domains' /etc/sssd/sssd.conf
+domains = ldap.vm
+```
+
 ## Accessing the guest machines
 
 The `sssd-test-suite` command line interface provides a wrapper around several
