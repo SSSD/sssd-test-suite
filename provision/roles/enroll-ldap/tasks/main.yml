@@ -7,6 +7,6 @@
 - name: Copy certificate to shared folder
   become: True
   copy:
-    src: /etc/dirsrv/slapd-master-ldap/cacert.asc
+    src: /etc/dirsrv/slapd-localhost/ca.crt
     dest: '/shared/enrollment/{{ inventory_hostname }}/'
     remote_src: yes
