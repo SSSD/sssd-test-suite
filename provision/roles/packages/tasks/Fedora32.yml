@@ -45,8 +45,6 @@
     state: present
     name:
     - 389-ds-base
-    - 389-ds-base-legacy-tools
-    - perl
   when: inventory_hostname == 'ldap'
 
 - name: Install Client specific packages
