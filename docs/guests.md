@@ -15,12 +15,12 @@ See [Basic Usage](basic-usage.md) for more information.
 
 ## User Accounts
 
-| Machine           |        Username         |   Password   |   Description     |
-|-------------------|-------------------------|--------------|-------------------|
-| Any Linux machine | vagrant                 | vagrant      | Local user        |
-| ad                | Administrator@ad.vm     | vagrant      | Domain user       |
-| ad-child          | Administrator@sub.ad.vm | vagrant      | Domain user       |
-| ipa               | admin                   | 123456789    | IPA administrator |
+| Machine           |        Username           |   Password   |   Description     |
+|-------------------|---------------------------|--------------|-------------------|
+| Any Linux machine | vagrant                   | vagrant      | Local user        |
+| ad                | Administrator@ad.vm       | vagrant      | Domain user       |
+| ad-child          | Administrator@child.ad.vm | vagrant      | Domain user       |
+| ipa               | admin                     | 123456789    | IPA administrator |
 
 ## Enrollment data
 
