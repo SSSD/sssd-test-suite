@@ -140,6 +140,7 @@
     - libtevent
     - libtevent-devel
     - libtool
+    - libunistring-devel
     - libuuid-devel
     - libxml2
     - libxslt
@@ -159,6 +160,7 @@
     - pam-devel
     - pam_wrapper
     - pcre-devel
+    - pcre2-devel
     - pkgconfig
     - po4a
     - popt-devel

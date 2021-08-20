@@ -89,6 +89,7 @@
     - libp11-kit-dev
     - libpam-wrapper
     - libpam0g-dev
+    - libpcre2-dev
     - libpcre3-dev
     - libpopt-dev
     - libsasl2-dev
@@ -104,6 +105,7 @@
     - libtool
     - libtool-bin
     - libuid-wrapper
+    - libunistring-dev
     - libxml2-utils
     - make
     - packagekit
