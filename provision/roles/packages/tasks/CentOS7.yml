@@ -23,6 +23,7 @@
     - NetworkManager
     - openldap-clients
     - python-pip
+    - python3-pip
     - screen
     - systemtap
     - tig
@@ -30,6 +31,11 @@
     - valgrind
     - vim
     - wget
+
+- name: Upgrade pip
+  become: True
+  shell: |
+    /usr/bin/pip3 install --upgrade pip
 
 - name: Install IPA specific packages
   become: True

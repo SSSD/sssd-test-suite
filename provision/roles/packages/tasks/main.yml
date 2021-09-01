@@ -20,4 +20,5 @@
     - paramiko
     - python-ldap
     - PyYAML
+    executable: pip3
   when: inventory_hostname == 'client'
