@@ -2,6 +2,13 @@
   set_fact:
     selinux_enabled: true
 
+- name: Enable GH cli repo
+  become: True
+  shell: |
+    dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
+  args:
+    warn: false
+
 - name: Install common packages
   become: True
   dnf:
@@ -28,6 +35,7 @@
     - valgrind
     - vim
     - wget
+    - gh
 
 - name: Install IPA specific packages
   become: True
