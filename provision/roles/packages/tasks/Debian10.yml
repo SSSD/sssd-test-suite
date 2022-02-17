@@ -76,6 +76,7 @@
     - libini-config-dev
     - libjansson-dev
     - libkeyutils-dev
+    - libkrad-dev
     - libkrb5-dev
     - libldap2-dev
     - libldb-dev
