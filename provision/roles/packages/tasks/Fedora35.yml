@@ -53,6 +53,8 @@
     state: present
     name:
     - 389-ds-base
+    # https://bugzilla.redhat.com/show_bug.cgi?id=2057436
+    - acl
   when: inventory_hostname == 'ldap'
 
 - name: Install Client specific packages
