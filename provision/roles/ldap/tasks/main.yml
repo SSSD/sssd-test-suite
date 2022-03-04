@@ -15,3 +15,13 @@
   args:
     creates: '/etc/dirsrv/slapd-localhost'
 
+- name: Grant read-only anonymous access
+  become: True
+  shell: |
+    ldapmodify -D "{{ ldap.bind.dn }}" -w "{{ ldap.bind.password }}" -H ldap://localhost -x
+  args:
+    stdin: |
+      dn: {{ ldap.suffix }}
+      changetype: modify
+      add: aci
+      aci: (targetattr=*)(version 3.0; acl "Enable anyone read"; allow (read, search, compare)(userdn="ldap:///anyone");)
