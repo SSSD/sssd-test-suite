@@ -2,7 +2,7 @@
   become: True
   lineinfile:
     path: /etc/hosts
-    regexp: '^(127\.0\.0\.1|::1)[ \t]+{{ ipa.hostname }}.*$'
+    regexp: '^(127\.0\.[0-1]\.1|::1)[ \t]+{{ ipa.hostname }}.*$'
     state: absent
 
 - name: Install IPA server
