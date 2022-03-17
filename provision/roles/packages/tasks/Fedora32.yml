@@ -94,6 +94,7 @@
     - libdhash-devel
     - libfaketime
     - libini_config-devel
+    - libjose-devel
     - libldb
     - libldb-devel
     - libnfsidmap-devel

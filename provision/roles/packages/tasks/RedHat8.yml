@@ -124,6 +124,7 @@
     - libcurl-devel
     - libdhash-devel
     - libini_config-devel
+    - libjose-devel
     - libldb
     - libldb-devel
     - libnfsidmap-devel
