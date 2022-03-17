@@ -75,6 +75,7 @@
     - libhttp-parser-dev
     - libini-config-dev
     - libjansson-dev
+    - libjose-dev
     - libkeyutils-dev
     - libkrad-dev
     - libkrb5-dev
