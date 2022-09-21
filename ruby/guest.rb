@@ -11,6 +11,7 @@ class Guest
 
       this.vm.provider :libvirt do |libvirt|
         libvirt.memory = machine.memory
+        libvirt.cpus = machine.cpus
         libvirt.storage_pool_name = "sssd-test-suite"
 
         # Creating new private networks requires system connection.
