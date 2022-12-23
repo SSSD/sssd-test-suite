@@ -53,6 +53,16 @@ class Config
     return value
   end
 
+  def getCpus(name)
+    value = @config.dig("boxes", name, "cpus")
+
+    if value.nil?
+      return 1
+    end
+
+    return value
+  end
+
   def getFolders(type, env_var)
     if ENV.has_key?("SSSD_TEST_SUITE_BOX")
       if ENV["SSSD_TEST_SUITE_BOX"] == "yes"

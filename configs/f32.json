@@ -3,12 +3,14 @@
     "ad": {
       "name": "peru/windows-server-2019-datacenter-x64-eval",
       "url": "",
-      "memory": 2048
+      "memory": 2048,
+      "cpus": 2
     },
     "ad-child": {
       "name": "peru/windows-server-2019-datacenter-x64-eval",
       "url": "",
-      "memory": 2048
+      "memory": 2048,
+      "cpus": 2
     },
     "ipa": {
       "name": "fedora/32-cloud-base",
